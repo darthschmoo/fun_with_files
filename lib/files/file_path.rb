@@ -204,14 +204,15 @@ module FunWith
         split_basename.length > 1 ? split_basename.last : ""
       end
       
-      # given an ancestor dir, returns a relative path that takes you from
-      # the ancestor dir to the pathfile.  TODO: expand to arbitrary paths, not
-      # just immediate ancestors.  For example "/usr/bin/bash".relative_to("/usr/bin/zsh") => "." ?
-      # TODO:  look at Pathname.relative_path_from.  Might just want to alias.
-      def relative_to( ancestor_dir )
-        depth = ancestor_dir.to_s.split(File::SEPARATOR).length
-        relative_path = self.to_s.split(File::SEPARATOR)
-        relative_path[(depth)..-1].join(File::SEPARATOR).fwf_filepath
+      # base, ext =  @path.basename_and_ext
+      def basename_and_ext
+        [basename_no_ext, ext]
+      end
+      
+      # Basically Pathname.relative_path_from, but you can pass in strings
+      def relative_path_from( dir )
+        dir = super( Pathname.new( dir ) )
+        self.class.new( dir )
       end
       
       # gsub acts on the filepath, not the file contents
@@ -227,6 +228,39 @@ module FunWith
       def fwf_filepath
         self
       end
+      
+      # Gives a sequence of files.  Examples:
+      # file.dat --> file.000000.dat
+      # file_without_ext --> file_without_ext.000000
+      # If it sees a six-digit number at or near the end of the
+      # filename, it increments it.
+      #
+      # You can change the length of the sequence string by passing
+      # in an argument, but it should always be the same value for
+      # a given set of files.
+      SUCC_DIGIT_COUNT = 6
+      def succ( digit_count = SUCC_DIGIT_COUNT )
+        chunks = basename.to_s.split(".")
+        if chunks.length == 1  # not being counted, no file extension.
+          chunks.push( "0" * digit_count )
+        elsif match_data = chunks[-2].match( /^(\d{#{digit_count}})$/ )
+          i = match_data[1].to_i + 1
+          chunks[-2] = sprintf("%0#{digit_count}i", i)
+        elsif  match_data = chunks[-1].match( /^(\d{#{digit_count}})$/ )
+          i = match_data[1].to_i + 1
+          chunks[-1] = sprintf("%0#{digit_count}i", i)
+        else  # not being counted, has file extension
+          chunks = [chunks[0..-2], ("0" * digit_count), chunks[-1]].flatten
+        end
+
+        self.up.join( chunks.join(".") )
+      end
     end
+    
+    # TODO: succession : enumerates a sequence of files that get passed
+    # to a block in order.
+    
+    # TODO: succ_last : find the last existing file of the given sequence.
+    # TODO: succ_next : find the first free file of the given sequence
   end
 end

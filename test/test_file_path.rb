@@ -32,6 +32,27 @@ class TestFilePath < Test::Unit::TestCase
       #invoking down didn't change original
       assert_no_match /ask_for_floyd/, f2.to_s
     end
+    
+    should "convert from string" do
+      str = "/"
+      f1 = FilePath.new(str)
+      f2 = str.fwf_filepath
+      
+      assert_equal f1, f2
+    end
+    
+    should "convert from pathname" do
+      str = "/"
+      f1 = FilePath.new(str)
+      f2 = Pathname.new(str).fwf_filepath
+      
+      assert_equal f1, f2
+      
+      f3 = f1.join( "bin", "bash" )
+      f4 = Pathname.new( str ).fwf_filepath( "bin", "bash" )
+      
+      assert_equal f3, f4
+    end
   end
   
   context "test glob" do
