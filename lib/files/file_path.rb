@@ -187,7 +187,7 @@ module FunWith
           self.glob( "**", "*" ).length == 0
         end
       end
-      
+            
       # Does not return a filepath
       def basename_no_ext
         self.basename.to_s.split(".")[0..-2].join(".")
@@ -239,28 +239,97 @@ module FunWith
       # in an argument, but it should always be the same value for
       # a given set of files.
       SUCC_DIGIT_COUNT = 6
-      def succ( digit_count = SUCC_DIGIT_COUNT )
-        chunks = basename.to_s.split(".")
-        if chunks.length == 1  # not being counted, no file extension.
-          chunks.push( "0" * digit_count )
+      def succ( opts = { digit_count: SUCC_DIGIT_COUNT, timestamp: false } )
+        if opts[:timestamp]
+          timestamp = Time.now.strftime("%Y%m%d%H%M%S%L")
+          digit_count = timestamp.length
+        else
+          timestamp = false
+          digit_count = opts[:digit_count]
+        end
+        
+        chunks = self.basename.to_s.split(".")
+        # not yet sequence stamped, no file extension.
+        if chunks.length == 1
+          if timestamp
+            chunks.push( timestamp )
+          else
+            chunks.push( "0" * digit_count )
+          end
+        # sequence stamp before file extension
         elsif match_data = chunks[-2].match( /^(\d{#{digit_count}})$/ )
-          i = match_data[1].to_i + 1
-          chunks[-2] = sprintf("%0#{digit_count}i", i)
-        elsif  match_data = chunks[-1].match( /^(\d{#{digit_count}})$/ )
-          i = match_data[1].to_i + 1
-          chunks[-1] = sprintf("%0#{digit_count}i", i)
-        else  # not being counted, has file extension
-          chunks = [chunks[0..-2], ("0" * digit_count), chunks[-1]].flatten
+          if timestamp
+            chunks[-2] = timestamp
+          else
+            i = match_data[1].to_i + 1
+            chunks[-2] = sprintf("%0#{digit_count}i", i)
+          end
+        # try to match sequence stamp to end of filename
+        elsif match_data = chunks[-1].match( /^(\d{#{digit_count}})$/ )
+          if timestamp
+            chunks[-1] = timestamp
+          else
+            i = match_data[1].to_i + 1
+            chunks[-1] = sprintf("%0#{digit_count}i", i)
+          end
+        # not yet sequence_stamped, has file extension
+        else
+          chunks = [chunks[0..-2], (timestamp ? timestamp : "0" * digit_count), chunks[-1]].flatten
         end
 
         self.up.join( chunks.join(".") )
       end
+    
+    
+      # TODO: succession : enumerates a sequence of files that get passed
+      # to a block in order.
+      def succession( opts = { digit_count: SUCC_DIGIT_COUNT, timestamp: false } )
+        if opts[:timestamp]
+          timestamp = Time.now.strftime("%Y%m%d%H%M%S%L")
+          digit_count = timestamp.length
+        else
+          timestamp = false
+          digit_count = opts[:digit_count]
+        end
+      
+        chunks = self.basename.to_s.split(".")
+        glob_stamp_matcher = '[0-9]' * digit_count
+        
+        # unstamped filename, no extension
+        if chunks.length == 1
+          original = chunks.first
+          stamped = [original, glob_stamp_matcher].join(".")
+        # stamped filename, no extension
+        elsif chunks[-1].match( /^\d{#{digit_count}}$/ )
+          original = chunks[0..-2].join(".")
+          stamped = [original, glob_stamp_matcher].join(".")
+        # stamped filename, has extension
+        elsif chunks[-2].match( /^\d{#{digit_count}}$/ )
+          original = [chunks[0..-3], chunks.last].flatten.join(".")
+          stamped = [chunks[0..-3], glob_stamp_matcher, chunks.last].join(".")
+        # unstamped filename, has extension
+        else
+          original = chunks.join(".")
+          stamped = [ chunks[0..-2], glob_stamp_matcher, chunks[-1] ].flatten.join(".")
+        end
+      
+        [self.dirname.glob(original), self.dirname.glob(stamped)].flatten
+      end
+
+
+    
+      # TODO: succ_last : find the last existing file of the given sequence.
+      # TODO: succ_next : find the first free file of the given sequence
+    
+    
+      # File manipulation
+      def rename( filename )
+      
+      end
+    
+      def rename_all( pattern, gsubbed )
+      
+      end
     end
-    
-    # TODO: succession : enumerates a sequence of files that get passed
-    # to a block in order.
-    
-    # TODO: succ_last : find the last existing file of the given sequence.
-    # TODO: succ_next : find the first free file of the given sequence
   end
 end

@@ -1,9 +1,47 @@
 = fun_with_files
 
-Description goes here.
+FunWith::Files adds a bit of whimsy to your file manipulations, if that's what you're looking for.
+
+To the code!
+
+    require 'fun_with_files'
+    
+    include FunWith::Files
+    
+    class Project; end
+    
+    RootPath.rootify( Project, "/home/user/path/to/project" )
+    
+    Project.root  # => <FunWith::Files::FilePath:/home/user/path/to/project>
+    Project.root("hello", "subdir") # => <FunWith::Files::FilePath:/home/user/path/to/project/hello/subdir>
+    
+    home = FilePath.home
+    music = FilePath.home( "Music" )
+    
+    music.touch_dir( "sinead_o_connor" ) do |dir|
+      dir.touch_dir( "sean_nos_nua" ) do |subdir|
+        subdir.touch( "03-lord_franklin.mp3" )
+      end
+      
+      dir.touch_dir( "theology" ) do |subdir|
+        subdir.touch( "05-darker_than_blue.mp3" )
+      end
+    end
+    
+    mp3s = music.glob( "**/*.mp3" ) # => [<FunWith::Files::FilePath:/home/user/Music/sinead_o_connor/sean_nos_nua/03-lord_franklin.mp3>,
+                            # <FunWith::Files::FilePath:/home/user/Music/sinead_o_connor/theology/05-darker_than_blue.mp3>]
+    mp3s.last.write( Hypothetical::MP3::Source.new.read )
+    
+    # whole buchcha other goodies, yet to be documented.
+    
+    
+    
+
 
 == Contributing to fun_with_files
- 
+
+Boilerplate from Jeweler, but seems to make sense.
+
 * Check out the latest master to make sure the feature hasn't been implemented or the bug hasn't been fixed yet.
 * Check out the issue tracker to make sure someone already hasn't requested it and/or contributed it.
 * Fork the project.

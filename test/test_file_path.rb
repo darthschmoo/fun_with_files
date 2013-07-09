@@ -79,5 +79,66 @@ class TestFilePath < Test::Unit::TestCase
     end
   end
   
-  
+  context "test sequence" do
+    setup do
+      @tmp_dir = FunWith::Files.root( 'test', 'tmp' )
+    end
+    
+    teardown do
+      `rm -rf #{@tmp_dir.join('*')}`
+    end
+    
+    should "sequence files nicely" do
+      seqfile = @tmp_dir.join("sequence.txt")
+      
+      10.times do |i|
+        seqfile.write( i.to_s )
+        seqfile = seqfile.succ
+      end
+      
+      assert @tmp_dir.join("sequence.txt").exist?
+      assert @tmp_dir.join("sequence.000000.txt").exist?
+      assert @tmp_dir.join("sequence.000008.txt").exist?
+      
+      assert_equal "0", @tmp_dir.join("sequence.txt").read
+      assert_equal "9", @tmp_dir.join("sequence.000008.txt").read
+    end
+    
+    should "sequence files with custom stamp length" do
+      seqfile = @tmp_dir.join("sequence.txt")
+      
+      10.times do |i|
+        seqfile.write( i.to_s )
+        seqfile = seqfile.succ( digit_count: 4 )
+      end
+      
+      assert @tmp_dir.join("sequence.txt").exist?
+      assert @tmp_dir.join("sequence.0000.txt").exist?
+      assert @tmp_dir.join("sequence.0008.txt").exist?
+      
+      assert_equal "0", @tmp_dir.join("sequence.txt").read
+      assert_equal "9", @tmp_dir.join("sequence.0008.txt").read
+    end
+    
+    should "sequence files with datestamps" do
+      seqfile = @tmp_dir.join("sequence.txt")
+      
+      10.times do |i|
+        seqfile.write( i.to_s )
+        seqfile = seqfile.succ( timestamp: true )
+        sleep(0.002)
+      end
+      
+      files = seqfile.succession( timestamp: true )
+      assert files.length == 10
+      
+      files.each_with_index do |file, i|
+        assert file.exist?
+        assert_equal i.to_s, file.read
+      end
+      
+      file_name_strings = files.map(&:to_s)
+      assert_equal file_name_strings[1..-1], file_name_strings[1..-1].sort
+    end
+  end
 end
