@@ -18,3 +18,6 @@ require 'fun_with_files'
 
 class Test::Unit::TestCase
 end
+
+class FunWith::Files::TestCase < Test::Unit::TestCase
+end

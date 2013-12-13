@@ -2,14 +2,15 @@ require 'helper'
 
 include FunWith::Files
 
-class TestTouching < Test::Unit::TestCase
+class TestTouching < FunWith::Files::TestCase
   context "inside a tmpdir" do
     setup do
       @dir = FilePath.tmpdir
     end
     
     teardown do
-      FileUtils.rmtree( @dir )
+      @dir.rm
+      assert_equal false, @dir.directory?
     end
     
     should "touch a subdirectory" do

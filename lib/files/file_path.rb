@@ -59,6 +59,7 @@ module FunWith
       #                [representing a file path] as the sole argument.
       #
       #    :recurse => [false] 
+      #    :recursive (synonym for :recurse)
       #    
       #    :ext => []  A single symbol, or a list containing strings/symbols representing file name extensions.
       #                No leading periods kthxbai.
@@ -92,7 +93,7 @@ module FunWith
         if args.first == :all
           args = ["**", "*"]
         else
-          recurser = opts[:recurse] ? "**" : nil
+          recurser = (opts[:recurse] || opts[:recursive]) ? "**" : nil
           extensions = case opts[:ext]
           when Symbol, String
             "*.#{opts[:ext]}"
@@ -329,6 +330,35 @@ module FunWith
     
       def rename_all( pattern, gsubbed )
       
+      end
+
+      def rm( secure = false )
+        if self.file?
+          FileUtils.rm( self )
+        elsif self.directory?
+          FileUtils.rmtree( self )
+        end
+      end
+      
+      def =~( rval )
+        self.to_s =~ rval
+      end
+      
+      def load
+        if self.directory?
+          self.glob( :recursive => true, :ext => "rb" ).map(&:load)
+        else
+          Kernel.load( self.expand )
+        end
+      end
+      
+      
+      def requir
+        if self.directory?
+          self.glob( :recursive => true, :ext => "rb" ).map(&:requir)
+        else
+          require self.expand.gsub( /\.rb$/, '' )
+        end
       end
     end
   end

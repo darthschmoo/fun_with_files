@@ -2,7 +2,7 @@ require 'helper'
 
 include FunWith::Files
 
-class TestRootPath < Test::Unit::TestCase
+class TestRootPath < FunWith::Files::TestCase
   should "add a root to a module" do
     mod = Module.new
     path = File.join("/", "usr", "bin")

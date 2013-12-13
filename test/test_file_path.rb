@@ -2,7 +2,7 @@ require 'helper'
 
 include FunWith::Files
 
-class TestFilePath < Test::Unit::TestCase
+class TestFilePath < FunWith::Files::TestCase
   context "testing basics" do
     setup do
       
