@@ -207,7 +207,15 @@ module FunWith
       
       # base, ext =  @path.basename_and_ext
       def basename_and_ext
-        [basename_no_ext, ext]
+        [self.basename_no_ext, self.ext]
+      end
+      
+      def dirname_and_basename
+        [self.dirname, self.basename]
+      end
+      
+      def dirname_and_basename_and_ext
+        [self.dirname, self.basename_no_ext, self.ext]
       end
       
       # Basically Pathname.relative_path_from, but you can pass in strings
@@ -215,16 +223,7 @@ module FunWith
         dir = super( Pathname.new( dir ) )
         self.class.new( dir )
       end
-      
-      # gsub acts on the filepath, not the file contents
-      def gsub( *args )
-        self.to_s.gsub(*args).fwf_filepath
-      end
-      
-      def gsub!( *args )
-        new_path = self.to_s.gsub(*args)
-        self.instance_variable_set(:@path, new_path)
-      end
+
     
       def fwf_filepath
         self
@@ -339,10 +338,7 @@ module FunWith
           FileUtils.rmtree( self )
         end
       end
-      
-      def =~( rval )
-        self.to_s =~ rval
-      end
+
       
       def load
         if self.directory?
@@ -358,6 +354,32 @@ module FunWith
           self.glob( :recursive => true, :ext => "rb" ).map(&:requir)
         else
           require self.expand.gsub( /\.rb$/, '' )
+        end
+      end
+      
+      def root?
+        self == self.up
+      end
+      
+      def descend( &block )
+        path = self.clone
+        
+        if path.root?
+          yield path
+        else
+          self.up.descend( &block )
+          yield self
+        end
+      end
+      
+      def ascend( &block )
+        path = self.clone
+        
+        if path.root?
+          yield path
+        else
+          yield self
+          self.up.ascend( &block )
         end
       end
     end
