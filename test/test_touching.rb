@@ -1,7 +1,5 @@
 require 'helper'
 
-include FunWith::Files
-
 class TestTouching < FunWith::Files::TestCase
   context "inside a tmpdir" do
     setup do

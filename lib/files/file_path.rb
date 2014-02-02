@@ -14,6 +14,11 @@ module FunWith
         self.cwd( *args )
       end
       
+      # If block given, temporary directory is deleted at the end of the block, and the
+      # value given by the block is returned.
+      # 
+      # If no block given, the path to the temp directory is returned as a FilePath.
+      # Don't forget to delete it when you're done.
       def self.tmpdir( &block )
         if block_given?
           Dir.mktmpdir do |d|
@@ -28,6 +33,10 @@ module FunWith
         Dir.home.fwf_filepath.join( *args )
       end
 
+      def self.template( src, dest, vars = {} )
+        raise "require 'fun_with_templates' to use this method"
+      end
+
       def join( *args, &block )
         if block_given?
           yield self.class.new( super(*args) )
@@ -38,6 +47,8 @@ module FunWith
 
       alias :exists? :exist?
       
+      # If called on a file instead of a directory,
+      # has the same effect as path.dirname
       def up
         self.class.new( self.join("..") ).expand
       end
@@ -169,6 +180,7 @@ module FunWith
         end
       end
       
+      # Returns a [list] of the lines in the file matching the given file
       def grep( regex )
         return [] unless self.file?
         matching = []
@@ -223,7 +235,6 @@ module FunWith
         dir = super( Pathname.new( dir ) )
         self.class.new( dir )
       end
-
     
       def fwf_filepath
         self

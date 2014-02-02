@@ -1,7 +1,5 @@
 require 'helper'
 
-include FunWith::Files
-
 class TestGlobbing < FunWith::Files::TestCase
   should "glob some ruby files from the test/loadable_dir directory" do
     assert FunWith::Files.respond_to?(:root)

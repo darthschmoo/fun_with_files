@@ -2,7 +2,10 @@ require 'pathname'  #stdlib
 require 'tmpdir'
 require 'debugger'
 
-for file in %w(file_path 
+for file in %w(directory_builder
+               downloader
+               file_orderer
+               file_path 
                root_path 
                remote_path 
                string_extensions 

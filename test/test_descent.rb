@@ -1,7 +1,5 @@
 require 'helper'
 
-include FunWith::Files
-
 class TestDescent < FunWith::Files::TestCase
   should "descend and ascend" do
     root = FunWith::Files.root

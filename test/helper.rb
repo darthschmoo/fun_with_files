@@ -20,4 +20,12 @@ class Test::Unit::TestCase
 end
 
 class FunWith::Files::TestCase < Test::Unit::TestCase
+  include FunWith::Files
+  
+  def tmpdir( &block )
+    FunWith::Files::FilePath.tmpdir do |d|
+      @tmpdir = d
+      yield
+    end
+  end
 end

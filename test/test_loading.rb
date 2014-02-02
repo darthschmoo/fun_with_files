@@ -1,7 +1,5 @@
 require 'helper'
 
-include FunWith::Files
-
 class TestLoading < FunWith::Files::TestCase
   should "require a file" do
     assert !defined?( LoadedOrRequiredModule::Loaded1 ), "LoadedOrRequiredModule::Loaded1 shouldn't be defined yet."
