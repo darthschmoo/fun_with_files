@@ -359,10 +359,46 @@ module FunWith
         end
       end
       
-      
+      # Require ALL THE RUBY!
+      # This may be a bad idea...
+      # 
+      # Sometimes it fails to require a file because one of the necessary prerequisites
+      # hasn't been required yet (NameError).  requir catches this failure and stores 
+      # the failed requirement in order to try it later.  Doesn't fail until it goes through
+      # a full loop where none of the required files were successful.
       def requir
         if self.directory?
-          self.glob( :recursive => true, :ext => "rb" ).map(&:requir)
+          requirements = self.glob( :recursive => true, :ext => "rb" )
+          successfully_required = 1337  # need to break into initial loop
+          failed_requirements = []
+          error_messages = []
+          
+          while requirements.length > 0 && successfully_required > 0
+            successfully_required = 0
+            failed_requirements = []
+            error_messages = []
+            
+            for requirement in requirements
+              begin
+                requirement.requir
+                successfully_required += 1
+              rescue Exception => e
+                failed_requirements << requirement
+                error_messages << "#{e.message} (#{e.class})"
+              end
+            end
+            
+            requirements = failed_requirements
+          end
+          
+          if failed_requirements.length > 0
+            msg = "requiring directory #{self} failed:\n"
+            for message in error_messages
+              msg << "\n\terror message: #{message}"
+            end
+            
+            raise NameError.new(msg)
+          end
         else
           require self.expand.gsub( /\.rb$/, '' )
         end

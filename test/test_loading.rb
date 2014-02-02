@@ -24,4 +24,12 @@ class TestLoading < FunWith::Files::TestCase
     FunWith::Files.root( "test", "loadable_dir", "dir4" ).load
     assert defined?( LoadedOrRequiredModule::Loaded4 ), "FunWith::Files::LoadedOrRequiredModule::Loaded4 should be defined now."
   end
+  
+  should "requir a directory which requires multiple passes to complete" do
+    FunWith::Files.root( "test", "loadable_dir", "dir5" ).requir
+    assert defined?(A)
+    assert defined?(B)
+    assert defined?(C)
+    assert defined?(D)
+  end
 end

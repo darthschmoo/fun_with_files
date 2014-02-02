@@ -6,6 +6,6 @@ class TestGlobbing < FunWith::Files::TestCase
     @loadable_dir = FunWith::Files.root("test", "loadable_dir")
     assert @loadable_dir.directory?
     @globs = @loadable_dir.glob( :recursive => true, :ext => "rb" )
-    assert_equal 4, @globs.length
+    assert_equal 8, @globs.length
   end
 end
