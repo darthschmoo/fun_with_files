@@ -1,22 +1,22 @@
+require 'digest/md5'
 require 'pathname'  #stdlib
 require 'tmpdir'
-require 'debugger'
 
-for file in %w(directory_builder
-               downloader
-               file_orderer
-               file_path 
-               root_path 
-               remote_path 
-               string_extensions 
-               string_behavior 
-               pathname_extensions 
-               xdg_extensions)
-               
-  require_relative File.join("files", file)
+for file in Dir.glob( File.join( File.dirname(__FILE__), "files", "**", "*.rb" ) ).map{ |f| f.gsub(/\.rb$/, '') }
+  require file
 end
 
 FunWith::Files::RootPath.rootify( FunWith::Files, __FILE__.fwf_filepath.dirname.up )
-FunWith::Files::VERSION = FunWith::Files.root("VERSION").read
 
-FunWith::Files::FilePath.send( :include, FunWith::Files::StringBehavior )
+module FunWith
+  module Files
+    class FilePath
+      for mod in [ StringBehavior,
+                   FileManipulationMethods,
+                   FilePermissionMethods,
+                   DigestMethods ]
+        include mod
+      end
+    end
+  end
+end

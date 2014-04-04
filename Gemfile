@@ -9,9 +9,9 @@ source "http://rubygems.org"
 group :development do
   gem "shoulda", ">= 3.5"
   gem "rdoc", "~> 3.12"
-  gem "bundler", "~> 1.3.5"
-  gem "jeweler", "~> 1.8.7"
+  gem "bundler", "~> 1.5"
+  gem "jeweler", "~> 2.0"
+  # gem "debugger", "~> 1.6"
 end
 
 gem "xdg"
-gem "debugger"

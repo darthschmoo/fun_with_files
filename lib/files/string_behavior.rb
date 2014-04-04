@@ -19,6 +19,10 @@ module FunWith
       def gsub!( *args )
         @path = @path.gsub(*args)
       end
+      
+      def scan( *args, &block )
+        @path.scan( *args, &block )
+      end
     end
   end
 end

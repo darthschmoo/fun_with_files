@@ -33,10 +33,6 @@ module FunWith
         Dir.home.fwf_filepath.join( *args )
       end
 
-      def self.template( src, dest, vars = {} )
-        raise "require 'fun_with_templates' to use this method"
-      end
-
       def join( *args, &block )
         if block_given?
           yield self.class.new( super(*args) )
@@ -197,7 +193,7 @@ module FunWith
         if self.file?
           File.size( self ) == 0
         elsif self.directory?
-          self.glob( "**", "*" ).length == 0
+          self.glob( "**", "*" ).fwf_blank?
         end
       end
             
@@ -292,11 +288,25 @@ module FunWith
       end
     
     
+      def specifier( str )
+        str = str.to_s
+        chunks = self.to_s.split(".")
+        
+        if chunks.length == 1
+          chunks << str
+        else
+          chunks = chunks[0..-2] + [str] + [chunks[-1]]
+        end
+        
+        chunks.join(".").fwf_filepath
+      end
+    
       # TODO: succession : enumerates a sequence of files that get passed
       # to a block in order.
       def succession( opts = { digit_count: SUCC_DIGIT_COUNT, timestamp: false } )
         if opts[:timestamp]
-          timestamp = Time.now.strftime("%Y%m%d%H%M%S%L")
+          opts[:timestamp_format] ||= "%Y%m%d%H%M%S%L"
+          timestamp = Time.now.strftime( opts[:timestamp_format] )
           digit_count = timestamp.length
         else
           timestamp = false

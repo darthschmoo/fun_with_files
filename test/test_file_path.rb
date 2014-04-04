@@ -1,5 +1,6 @@
 require 'helper'
 
+puts "got here"
 class TestFilePath < FunWith::Files::TestCase
   context "testing basics" do
     setup do
@@ -12,7 +13,7 @@ class TestFilePath < FunWith::Files::TestCase
       assert f1.exist?
       assert f2.exist?
     end
-    
+
     should "go up/down when asked" do
       f1 = FilePath.new( "/", "home", "users", "monkeylips", "ask_for_floyd" )
       f2 = FilePath.new( "/", "home", "users" )
@@ -60,9 +61,9 @@ class TestFilePath < FunWith::Files::TestCase
     
     should "glob items in test/data directory" do
       files = @data_dir.glob(:all)
-      assert_equal 3, files.length
+      assert_equal 5, files.length
       files = @data_dir.glob(:all, :flags => [File::FNM_DOTMATCH])
-      assert_equal 7, files.length
+      assert_equal 9, files.length
     end
     
     should "glob with case insensitive flag" do
@@ -137,6 +138,46 @@ class TestFilePath < FunWith::Files::TestCase
       
       file_name_strings = files.map(&:to_s)
       assert_equal file_name_strings[1..-1], file_name_strings[1..-1].sort
+    end
+  end
+  
+  context "test specify()" do
+    should "just friggin' work" do
+      fil = "resume.doc".fwf_filepath
+      
+      test_data = [ [:cyberdyne, "resume.cyberdyne.doc"],
+                    [:administrative, "resume.cyberdyne.administrative.doc"],
+                    [:v2, "resume.cyberdyne.administrative.v2.doc"],
+                    [:gratuitous_use_of_specifier, "resume.cyberdyne.administrative.v2.gratuitous_use_of_specifier.doc"]
+                  ]
+      
+      for key, result in test_data
+        fil = fil.specifier( key )
+        assert_equal result, fil.to_s
+      end
+    end
+  end
+  
+  context "test digest functions" do
+    setup do
+      @tmp_dir = FunWith::Files.root( 'test', 'tmp' )
+    end
+    
+    teardown do
+      `rm -rf #{@tmp_dir.join('*')}`
+    end
+    
+    should "md5hash a file" do
+      nilhash     = "d41d8cd98f00b204e9800998ecf8427e"
+      nilhashhash = "74be16979710d4c4e7c6647856088456" 
+      
+      empty = @tmp_dir.join("empty.dat")
+      empty.touch
+      assert_equal( nilhash, empty.md5 )
+      
+      file = @tmp_dir.join( "#{nilhash}.dat" )
+      file.write( nilhash )
+      assert_equal( nilhashhash, file.md5 )
     end
   end
 end
