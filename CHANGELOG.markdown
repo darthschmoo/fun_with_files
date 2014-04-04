@@ -2,7 +2,7 @@
 =====
 
 Added dependency on `fun_with_version_strings`.  Then removed it, cuz fwvs needs fwf more.  Bleh.
-Added filepath.md5 => hexdigest of file contents.
+Added filepath.md5() => hexdigest of file contents.
 
 
 0.0.4 - 0.0.6

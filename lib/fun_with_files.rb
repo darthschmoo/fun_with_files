@@ -1,8 +1,10 @@
-require 'digest/md5'
-require 'pathname'  #stdlib
+require 'digest/md5' # stdlib
+require 'pathname'   # stdlib
 require 'tmpdir'
 
-for file in Dir.glob( File.join( File.dirname(__FILE__), "files", "**", "*.rb" ) ).map{ |f| f.gsub(/\.rb$/, '') }
+files = Dir.glob( File.join( File.dirname(__FILE__), "fun_with", "**", "*.rb" ) )
+
+for file in files.map{ |f| f.gsub(/\.rb$/, '') }
   require file
 end
 

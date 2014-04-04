@@ -1,6 +1,5 @@
 require 'helper'
 
-puts "got here"
 class TestFilePath < FunWith::Files::TestCase
   context "testing basics" do
     setup do
