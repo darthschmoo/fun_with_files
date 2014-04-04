@@ -4,17 +4,17 @@ class TestCopying < FunWith::Files::TestCase
   context "inside a tmpdir" do
     setup do
       @dir = FilePath.tmpdir
-      assert @dir.exist?
+      assert_directory @dir
     end
     
     teardown do
       @dir.rm
-      assert_equal false, @dir.directory?
+      assert_not_directory @dir
     end
     
     should "copy a single file" do
       outdir = @dir.join( "down", "down", "down", "to", "the", "depths" )
-      assert !outdir.exist?
+      assert_no_file outdir
       outdir.touch_dir
       assert outdir.exist?
       

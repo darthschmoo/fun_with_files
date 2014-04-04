@@ -12,6 +12,7 @@ group :development do
   gem "bundler", "~> 1.5"
   gem "jeweler", "~> 2.0"
   # gem "debugger", "~> 1.6"
+  gem "fun_with_testing"
 end
 
 gem "xdg"

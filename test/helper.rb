@@ -21,6 +21,7 @@ end
 
 class FunWith::Files::TestCase < Test::Unit::TestCase
   include FunWith::Files
+  include FunWith::Testing::Assertions::FunWithFiles
   
   def tmpdir( &block )
     FunWith::Files::FilePath.tmpdir do |d|

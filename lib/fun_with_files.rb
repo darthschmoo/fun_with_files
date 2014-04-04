@@ -1,6 +1,7 @@
 require 'digest/md5' # stdlib
 require 'pathname'   # stdlib
 require 'tmpdir'
+require 'fun_with_testing'
 
 files = Dir.glob( File.join( File.dirname(__FILE__), "fun_with", "**", "*.rb" ) )
 

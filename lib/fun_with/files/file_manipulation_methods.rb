@@ -59,6 +59,18 @@ module FunWith
         self.write( self.file_gsub(*args,&block) )
       end
       
+      def empty!
+        if self.directory?
+          FileUtils.rm_rf( self.join( "*" ), secure: true )
+        else
+          self.write( "" )
+        end
+      end
+      
+      def truncate( len )
+        self.write( self.read( len ) )
+      end
+      
       protected
       def destination_and_options( args, &block )
         options = args.last.is_a?(Hash) ? args.pop : {}

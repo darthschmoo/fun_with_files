@@ -9,8 +9,8 @@ class TestFilePath < FunWith::Files::TestCase
     should "initialize kindly" do
       f1 = FilePath.new( "/", "bin", "bash" )
       f2 = "/".fwf_filepath( "bin", "bash" )
-      assert f1.exist?
-      assert f2.exist?
+      assert_file f1
+      assert_file f2
     end
 
     should "go up/down when asked" do
@@ -27,7 +27,7 @@ class TestFilePath < FunWith::Files::TestCase
       assert_equal f1, f2.down( "monkeylips" ).down( "ask_for_floyd" )
       assert_equal f1, f2.down( "monkeylips", "ask_for_floyd" )
       
-      #invoking down didn't change original
+      # invoking down didn't change original
       assert_no_match /ask_for_floyd/, f2.to_s
     end
     
@@ -94,12 +94,12 @@ class TestFilePath < FunWith::Files::TestCase
         seqfile = seqfile.succ
       end
       
-      assert @tmp_dir.join("sequence.txt").exist?
-      assert @tmp_dir.join("sequence.000000.txt").exist?
-      assert @tmp_dir.join("sequence.000008.txt").exist?
+      assert_file @tmp_dir.join("sequence.txt")
+      assert_file @tmp_dir.join("sequence.000000.txt")
+      assert_file @tmp_dir.join("sequence.000008.txt")
       
-      assert_equal "0", @tmp_dir.join("sequence.txt").read
-      assert_equal "9", @tmp_dir.join("sequence.000008.txt").read
+      assert_file_contents @tmp_dir.join("sequence.txt"), "0"
+      assert_file_contents @tmp_dir.join("sequence.000008.txt"), "9"
     end
     
     should "sequence files with custom stamp length" do
@@ -110,12 +110,12 @@ class TestFilePath < FunWith::Files::TestCase
         seqfile = seqfile.succ( digit_count: 4 )
       end
       
-      assert @tmp_dir.join("sequence.txt").exist?
-      assert @tmp_dir.join("sequence.0000.txt").exist?
-      assert @tmp_dir.join("sequence.0008.txt").exist?
+      assert_file @tmp_dir.join("sequence.txt")
+      assert_file @tmp_dir.join("sequence.0000.txt")
+      assert_file @tmp_dir.join("sequence.0008.txt")
       
-      assert_equal "0", @tmp_dir.join("sequence.txt").read
-      assert_equal "9", @tmp_dir.join("sequence.0008.txt").read
+      assert_file_contents @tmp_dir.join("sequence.txt"), "0"
+      assert_file_contents @tmp_dir.join("sequence.0008.txt"), "9"
     end
     
     should "sequence files with datestamps" do
@@ -131,8 +131,8 @@ class TestFilePath < FunWith::Files::TestCase
       assert files.length == 10
       
       files.each_with_index do |file, i|
-        assert file.exist?
-        assert_equal i.to_s, file.read
+        assert_file file
+        assert_file_contents file, i.to_s
       end
       
       file_name_strings = files.map(&:to_s)
