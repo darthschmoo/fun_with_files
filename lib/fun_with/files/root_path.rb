@@ -17,7 +17,11 @@ module FunWith
 
     class RootPath
       def self.rootify( target, path )
-        raise "#{target} already responds to :root" if target.respond_to?(:root)
+        if target.respond_to?(:root)
+          warn( "#{target} already responds to :root, skipping installation" )
+          return nil
+        end
+        
         target.extend( RootPathExtensions )
         target.set_root_path( FilePath.new( path ) )
       end

@@ -1,7 +1,8 @@
 # encoding: utf-8
 
-require 'rubygems'
-require 'bundler'
+require 'fun_with_testing'
+# require 'rubygems'
+# require 'bundler'
 
 begin
   Bundler.setup(:default, :development)
@@ -13,7 +14,7 @@ end
 
 require 'rake'
 
-require 'jeweler'
+# require 'jeweler'
 Jeweler::Tasks.new do |gem|
   # gem is a Gem::Specification... see http://docs.rubygems.org/read/chapter/20 for more options
   gem.name = "fun_with_files"

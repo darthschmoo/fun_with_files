@@ -15,11 +15,13 @@ module FunWith
       # ln_s(list, destdir, options)
       # ln_sf(src, dest, options)
       
+      # Opts are same as for FileUtils.cp_r
+      # returns the destination path.
+      # How to detect failure?  What to return on failure?
       def cp( *args )
-        self.destination_and_options( args ) do |dest, opts|
-          FileUtils.cp_r( self, dest, opts )
-          dest.fwf_filepath
-        end
+        dest, opts = self.destination_and_options( args )
+        FileUtils.cp_r( self, dest, opts )
+        dest.fwf_filepath
       end
       
       alias :copy :cp
@@ -41,10 +43,14 @@ module FunWith
         end
       end
       
-      def ln_s( link, options = {} )
-        FileUtils.ln_s( self, link, options )
+      def ln_s( *args )
+        link, opts = self.destination_and_options( args )
+        FileUtils.ln_s( self, link, opts )
         link.fwf_filepath
       end
+      
+      alias :symlink :ln_s
+      
       
       def file_gsub( *args, &block )
         lines = []
@@ -61,7 +67,7 @@ module FunWith
       
       def empty!
         if self.directory?
-          FileUtils.rm_rf( self.join( "*" ), secure: true )
+          FileUtils.rm_rf( self.entries, secure: true )
         else
           self.write( "" )
         end
@@ -84,19 +90,33 @@ module FunWith
       end
       
       
-      
       # logic should be shared by various manipulators
+      # 
+      # You can describe the destination as either a filepath or a bunch of strings for arguments.
+      # If the FilePath is relative, or if string args are given, then the destination will be
+      # relative to the path being copied (or in the case of a file, its parent directory).
+      #
+      # If dest doesn't exist, and src (self) is a file, dest is taken to be the complete path.
+      # If dest doesn't exist, and src (self) is a directory, then dest is taken to be 
+      # If dest is a directory and the source is a file, then the file will be copied into dest with the src's basename
       def find_destination_from_args( args )
+        raise ArgumentError.new("File #{self} must exist.") unless self.exist?
+        
         if args.first.is_a?(Pathname) 
+          raise ArgumentError.new( "accepts a FilePath or string args, not both" ) unless args.length == 1
           dest = args.first
-        elsif self.directory?
-          # what if they're trying to define an absolute dest, but being splitty?
-          dest = self.join( *args )
+          dest = dest.directory.join( dest ).expand if dest.relative?
         else
-          # ......
-          dest = self.dirname.join( *args )
-          dest = dest.join( self.basename ) if dest.directory?
+          dest = self.directory.join(*args).expand  # expand gets rid of /../ (parent_dir)
         end
+        
+        if self.file? && dest.directory?
+          dest = dest.join( self.basename )
+        elsif self.directory? && dest.file?
+          raise ArgumentError.new( "cannot overwrite a file with a directory" )
+        end
+                
+        dest
       end
         
       # rm(list, options)

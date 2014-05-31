@@ -21,5 +21,9 @@ class TestFunWithFiles < FunWith::Files::TestCase
       assert true.fwf_present?
       assert Object.new.fwf_present?
     end
+    
+    should "respond to api" do
+      assert_respond_to( FunWith::Files, :root )
+    end
   end
 end

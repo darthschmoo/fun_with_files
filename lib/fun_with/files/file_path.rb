@@ -1,19 +1,13 @@
 module FunWith
   module Files
     class FilePath < Pathname
+      SUCC_DIGIT_COUNT = 6
+      DEFAULT_TIMESTAMP_FORMAT = "%Y%m%d%H%M%S%L"
+      
       def initialize( *args )
         super( File.join( *args ) )
       end
 
-      # args implicitly joined to cwd
-      def self.cwd( *args )
-        Dir.pwd.fwf_filepath.join( *args )
-      end
-      
-      def self.pwd( *args )
-        self.cwd( *args )
-      end
-      
       # If block given, temporary directory is deleted at the end of the block, and the
       # value given by the block is returned.
       # 
@@ -27,10 +21,6 @@ module FunWith
         else
           Dir.mktmpdir.fwf_filepath
         end
-      end
-
-      def self.home( *args )
-        Dir.home.fwf_filepath.join( *args )
       end
 
       def join( *args, &block )
@@ -61,11 +51,11 @@ module FunWith
       #                  Can be given as an integer: (File::FNM_DOTMATCH | File::FNM_NOESCAPE)  
       #                  or as an array: [File::FNM_CASEFOLD, File::FNM_DOTMATCH]
       #                
-      #    :class  =>  [self.class] The class of objects you want returned (String, FilePath, ClassLoader, etc.)
+      #    :class  =>  [self.class] The class of objects you want returned (String, FilePath, etc.)
       #                Should probably be a subclass of FilePath or String.  Class.initialize() must accept a string
       #                [representing a file path] as the sole argument.
       #
-      #    :recurse => [false] 
+      #    :recurse => [defaults true]
       #    :recursive (synonym for :recurse)
       #    
       #    :ext => []  A single symbol, or a list containing strings/symbols representing file name extensions.
@@ -80,46 +70,86 @@ module FunWith
       #    results explicitly with arguments like .glob("**", "*.rb")
       # 
       # :all : if :all is the only argument, this is the same as .glob("**", "*")
+      # 
+      # Examples:
+      # @path.glob( "css", "*.css" )      # Picks up all css files in the css folder
+      # @path.glob( "css", :ext => :css ) # same
+      # @path.glob                        # Picks up all directories, subdirectories, and files
+      # @path.glob(:all)                  # same. Note: :all cannot be used in conjunction with :ext
+      # @path.glob("**", "*")             # same
+      # @path.entries                     # synonym for :all, :recursive => false
+      # 
       def glob( *args )
+        args.push( :all ) if args.fwf_blank?
         opts = args.last.is_a?(Hash) ? args.pop : {}
         
-        flags = case opts[:flags]
-        when NilClass
-          0
-        when Array      # should be an array of integers
-          opts[:flags].inject(0) do |memo, obj|
-            memo | obj
-          end
-        when Integer
-          opts[:flags]
+        if args.last == :all
+          all_arg_given = true
+          args.pop
+        else
+          all_arg_given = false
         end
+        
+        flags = case (flags_given = opts.delete(:flags))
+                when NilClass
+                  0
+                when Array      # should be an array of integers
+                  flags_given.inject(0) do |memo, obj|
+                    memo | obj
+                  end
+                when Integer
+                  flags_given
+                end
         
         flags |= File::FNM_DOTMATCH if opts[:dots]
         flags |= File::FNM_CASEFOLD if opts[:sensitive]
+    
+        recurse = if all_arg_given
+                    if opts[:recursive] == false || opts[:recurse] == false
+                      false
+                    else
+                      true
+                    end
+                  else
+                    opts[:recursive] == true || opts[:recurse] == true || false
+                  end
         
-        if args.first == :all
-          args = ["**", "*"]
+        if all_arg_given
+          if recurse
+            args = ["**", "*"]
+          else
+            args = ["*"]
+          end
         else
-          recurser = (opts[:recurse] || opts[:recursive]) ? "**" : nil
+          args.push("**") if recurse
+
           extensions = case opts[:ext]
           when Symbol, String
             "*.#{opts[:ext]}"
           when Array
             extensions = opts[:ext].map(&:to_s).join(',')
-            "*.{#{extensions}}"
+            "*.{#{extensions}}"                            # The Dir.glob format for this is '.{ext1,ext2,ext3}'
           when NilClass
-            nil
+            if args.fwf_blank?
+              "*"
+            else
+              nil
+            end
           end
           
-          args += [recurser, extensions]
-          args.compact!
+          args.push( extensions ) if extensions
         end
         
-        opts[:class] ||= self.class
+        class_to_return = opts[:class] || self.class
         
-        files = Dir.glob( self.join(*args), flags ).map{ |f| opts[:class].new(f) }
-        files.reject!{ |f| f.basename.to_s.match(/^\.{1,2}$/) } unless opts[:parent_and_current]
+        files = Dir.glob( self.join(*args), flags ).map{ |f| class_to_return.new( f ) }
+        files.reject!{ |f| f.basename.to_s.match( /^\.\.?$/ ) } unless opts[:parent_and_current]
+        
         files
+      end
+      
+      def entries
+        self.glob( :recurse => false )
       end
       
       def expand
@@ -193,7 +223,7 @@ module FunWith
         if self.file?
           File.size( self ) == 0
         elsif self.directory?
-          self.glob( "**", "*" ).fwf_blank?
+          self.glob( :all ).fwf_blank?
         end
       end
             
@@ -206,11 +236,18 @@ module FunWith
         self.gsub(/\.#{self.ext}$/, '')
       end
       
+      # Two separate modes.  With no arguments given, returns the current extension as a string (not a filepath)
+      # With an argument, returns the path with a .(arg) tacked onto the end.  The leading period is wholly optional.
       # Does not return a filepath.
       # Does not include leading period
-      def ext
-        split_basename = self.basename.to_s.split(".")
-        split_basename.length > 1 ? split_basename.last : ""
+      def ext( *args )
+        if args.length == 0
+          split_basename = self.basename.to_s.split(".")
+          split_basename.length > 1 ? split_basename.last : ""
+        elsif args.length == 1
+          ext = args.first.to_s.gsub(/^\./,'')
+          self.class.new( @path.dup + ".#{ext}" )
+        end
       end
       
       # base, ext =  @path.basename_and_ext
@@ -224,6 +261,20 @@ module FunWith
       
       def dirname_and_basename_and_ext
         [self.dirname, self.basename_no_ext, self.ext]
+      end
+      
+      # if it's a file, returns the immediate parent directory.
+      # if it's not a file, returns itself
+      def directory
+        self.directory? ? self : self.dirname
+      end
+      
+      def original?
+        !self.symlink?
+      end
+      
+      def original
+        self.symlink? ? self.readlink.original : self
       end
       
       # Basically Pathname.relative_path_from, but you can pass in strings
@@ -245,10 +296,12 @@ module FunWith
       # You can change the length of the sequence string by passing
       # in an argument, but it should always be the same value for
       # a given set of files.
-      SUCC_DIGIT_COUNT = 6
+      # 
+      # TODO: Need to get this relying on the specifier() method.
       def succ( opts = { digit_count: SUCC_DIGIT_COUNT, timestamp: false } )
-        if opts[:timestamp]
-          timestamp = Time.now.strftime("%Y%m%d%H%M%S%L")
+        if timestamp = opts[:timestamp]
+          timestamp_format = timestamp.is_a?(String) ? timestamp : DEFAULT_TIMESTAMP_FORMAT
+          timestamp = Time.now.strftime( timestamp_format )
           digit_count = timestamp.length
         else
           timestamp = false
@@ -287,6 +340,10 @@ module FunWith
         self.up.join( chunks.join(".") )
       end
     
+      
+      def timestamp( format = true )
+        self.succ( :timestamp => format )
+      end
     
       def specifier( str )
         str = str.to_s
@@ -334,7 +391,7 @@ module FunWith
           stamped = [ chunks[0..-2], glob_stamp_matcher, chunks[-1] ].flatten.join(".")
         end
       
-        [self.dirname.glob(original), self.dirname.glob(stamped)].flatten
+        [self.dirname.join(original), self.dirname.glob(stamped)].flatten
       end
 
 
@@ -394,7 +451,7 @@ module FunWith
                 successfully_required += 1
               rescue Exception => e
                 failed_requirements << requirement
-                error_messages << "#{e.message} (#{e.class})"
+                error_messages << "Error while requiring #{requirement} : #{e.message} (#{e.class})"
               end
             end
             

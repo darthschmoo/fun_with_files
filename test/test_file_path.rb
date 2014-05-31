@@ -2,15 +2,25 @@ require 'helper'
 
 class TestFilePath < FunWith::Files::TestCase
   context "testing basics" do
-    setup do
-      
-    end
-    
     should "initialize kindly" do
       f1 = FilePath.new( "/", "bin", "bash" )
       f2 = "/".fwf_filepath( "bin", "bash" )
       assert_file f1
       assert_file f2
+    end
+    
+    should "have location class methods available" do
+      assert_respond_to( FunWith::Files::FilePath, :home )
+      assert_respond_to( FunWith::Files::FilePath, :config_dir )
+      assert_respond_to( FunWith::Files::FilePath, :root )
+      assert_respond_to( FunWith::Files::FilePath, :data_dir )
+    end
+    
+    
+    should "join smoothly" do
+      bin_dir = "/bin".fwf_filepath
+      assert_equal( "/bin/bash", bin_dir.join("bash").to_s )
+      assert_equal( "/bin/bash", bin_dir.join("bash".fwf_filepath).to_s )
     end
 
     should "go up/down when asked" do
@@ -28,7 +38,7 @@ class TestFilePath < FunWith::Files::TestCase
       assert_equal f1, f2.down( "monkeylips", "ask_for_floyd" )
       
       # invoking down didn't change original
-      assert_no_match /ask_for_floyd/, f2.to_s
+      refute_match( /ask_for_floyd/, f2.to_s )
     end
     
     should "convert from string" do
@@ -138,7 +148,18 @@ class TestFilePath < FunWith::Files::TestCase
       file_name_strings = files.map(&:to_s)
       assert_equal file_name_strings[1..-1], file_name_strings[1..-1].sort
     end
+
+    should "timestamp files using the timestamp() method" do
+      timestampable_file = @tmp_dir.join( "timestamped.dat" )
+      timestamped_file1  = timestampable_file.timestamp
+      timestamped_file2  = timestampable_file.timestamp("%Y")
+
+      assert timestamped_file1 =~ /timestamped.\d{17}.dat$/
+      assert timestamped_file2 =~ /timestamped.\d{4}.dat$/
+    end
   end
+  
+
   
   context "test specify()" do
     should "just friggin' work" do
@@ -163,7 +184,7 @@ class TestFilePath < FunWith::Files::TestCase
     end
     
     teardown do
-      `rm -rf #{@tmp_dir.join('*')}`
+      empty_temp_directory
     end
     
     should "md5hash a file" do
@@ -177,6 +198,20 @@ class TestFilePath < FunWith::Files::TestCase
       file = @tmp_dir.join( "#{nilhash}.dat" )
       file.write( nilhash )
       assert_equal( nilhashhash, file.md5 )
+    end
+  end
+
+  context "test access" do
+    should "receive an electric shock when it tries to touch an unwritable file" do
+      @read_only_file = "/bin/bash".fwf_filepath   # This usually exists. I don't know enough Windows to think of a similarly ubiquitous file.
+      
+      if @read_only_file.file? && ! @read_only_file.writable?
+        assert_raises( Errno::EACCES ) do
+          @read_only_file.touch
+        end
+      else
+        skip
+      end
     end
   end
 end

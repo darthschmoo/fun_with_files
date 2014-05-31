@@ -1,7 +1,7 @@
-require 'digest/md5' # stdlib
-require 'pathname'   # stdlib
-require 'tmpdir'
-require 'fun_with_testing'
+require 'xdg'
+require 'digest'      # stdlib
+require 'pathname'    # stdlib
+require 'tmpdir'      # Dir.tmpdir
 
 files = Dir.glob( File.join( File.dirname(__FILE__), "fun_with", "**", "*.rb" ) )
 
@@ -14,12 +14,14 @@ FunWith::Files::RootPath.rootify( FunWith::Files, __FILE__.fwf_filepath.dirname.
 module FunWith
   module Files
     class FilePath
-      for mod in [ StringBehavior,
-                   FileManipulationMethods,
-                   FilePermissionMethods,
-                   DigestMethods ]
-        include mod
+      for moduul in [ StringBehavior,
+                      FileManipulationMethods,
+                      FilePermissionMethods,
+                      DigestMethods ]
+        include moduul
       end
     end
   end
 end
+
+FunWith::Files::FilePath.extend( FunWith::Files::FilePathLocationMethods )

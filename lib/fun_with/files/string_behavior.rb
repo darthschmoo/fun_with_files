@@ -23,6 +23,11 @@ module FunWith
       def scan( *args, &block )
         @path.scan( *args, &block )
       end
+      
+      # Lets it be a string when a string is called for.  Replacement argument in .gsub(), for example.
+      def to_str
+        @path.dup
+      end
     end
   end
 end
