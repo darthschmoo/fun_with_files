@@ -1,6 +1,6 @@
 module FunWith
   module Files
-    module FilePathLocationMethods
+    module FilePathClassMethods
       # args implicitly joined to cwd
       def cwd( *args )
         Dir.pwd.fwf_filepath.join( *args )

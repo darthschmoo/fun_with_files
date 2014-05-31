@@ -1,6 +1,11 @@
 CHANGELOG
 =========
 
+v0.0.9
+------
+
+Changed the initialization procedure, which wasn't working on some systems.
+
 v0.0.8
 ------
 
