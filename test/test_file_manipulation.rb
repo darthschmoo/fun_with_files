@@ -95,5 +95,11 @@ class TestFileManipulation < FunWith::Files::TestCase
       
       assert_file_contents( clone_of_clone, /This is the/ )
     end
+    
+    should "do nothing when opts[:noop]" do
+      file = @dir.join( "not_exist.txt" )
+      file.touch( :noop => true, :this_invalid_option_is_ignored => true, :also_this_one => "also ignored" )
+      assert_no_file file
+    end
   end
 end

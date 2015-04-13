@@ -15,16 +15,23 @@ module FunWith
       # ln_s(list, destdir, options)
       # ln_sf(src, dest, options)
       
-      # Opts are same as for FileUtils.cp_r
+      # opts are the last argument, and are passed to FileUtils.cp_r
       # returns the destination path.
       # How to detect failure?  What to return on failure?
+      #
+      # 
       def cp( *args )
         dest, opts = self.destination_and_options( args )
-        FileUtils.cp_r( self, dest, opts )
+        FileUtils.cp_r( self, dest, narrow_options( opts, FileUtils::OPT_TABLE["cp_r"] ) )
         dest.fwf_filepath
       end
       
       alias :copy :cp
+      
+      def mv( *args )
+        
+      end
+      
       
       # self is the target, link is the thing linking to self
       # returns filepath of the new link.  Will fall back to symbolic
@@ -34,18 +41,21 @@ module FunWith
           symlink = self.directory? || opts[:symbolic] || opts[:sym] || opts[:soft]
         
           if symlink
-            FileUtils.ln_s( self, link, opts )
+            FileUtils.ln_s( self, link, narrow_options( opts, FileUtils::OPT_TABLE["ln_s"] ) )
           else
-            FileUtils.ln( self, link, opts )
+            FileUtils.ln( self, link, narrow_options( opts, FileUtils::OPT_TABLE["ln"] ) )
           end
-        
+          
           link.fwf_filepath
         end
       end
       
+      alias :link :ln
+
+      
       def ln_s( *args )
         link, opts = self.destination_and_options( args )
-        FileUtils.ln_s( self, link, opts )
+        FileUtils.ln_s( self, link, narrow_options( opts, FileUtils::OPT_TABLE["ln_s"] ) )
         link.fwf_filepath
       end
       
@@ -53,6 +63,8 @@ module FunWith
       
       
       def file_gsub( *args, &block )
+        _must_be_a_file
+        
         lines = []
         self.each_line do |line|
           lines << line.gsub( *args, &block )
@@ -62,7 +74,10 @@ module FunWith
       end
       
       def file_gsub!( *args, &block )
-        self.write( self.file_gsub(*args,&block) )
+        _must_be_a_file      # raises error
+        _must_be_writable    # raises error
+        
+        self.write( self.file_gsub( *args, &block ) )
       end
       
       def empty!
@@ -73,8 +88,34 @@ module FunWith
         end
       end
       
+      # TODO: If it's truncated to a longer length than the original file,
+      # pad with zeros?  That's how the UNIX truncate command works.
       def truncate( len )
-        self.write( self.read( len ) )
+        _must_be_a_file     # raises error
+        _must_be_writable   # raises error
+        
+        old_size = self.size
+        padding = len > old_size ? "\0" * (len - old_size) : ""
+        
+        self.write( self.read( len ) + padding )
+      end
+      
+      # File manipulation
+      def rename( filename )
+        raise "NOT WORKING"
+      end
+
+      def rename_all( pattern, gsubbed )
+        raise "NOT WORKING"
+      end
+
+      # pass options?
+      def rm( secure = false )
+        if self.file?
+          FileUtils.rm( self )
+        elsif self.directory?
+          FileUtils.rmtree( self )
+        end
       end
       
       protected
@@ -161,6 +202,7 @@ module FunWith
       # chown(user, group, list, options)
       # chown_R(user, group, list, options)
       # touch(list, options)
+      
     end
   end
 end

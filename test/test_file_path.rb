@@ -192,6 +192,7 @@ class TestFilePath < FunWith::Files::TestCase
       nilhashhash = "74be16979710d4c4e7c6647856088456" 
       
       empty = @tmp_dir.join("empty.dat")
+      
       empty.touch
       assert_equal( nilhash, empty.md5 )
       

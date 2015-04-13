@@ -14,8 +14,8 @@ module FunWith
         File.executable?( self )
       end
       
-      def chmod( mode, options )
-        FileUtils.chmod( mode, self, options = {} )
+      def chmod( mode, opts = {} )
+        FileUtils.chmod( mode, self, narrow_options( opts, FileUtils::OPT_TABLE["chmod"] ) )
       end
     end
   end

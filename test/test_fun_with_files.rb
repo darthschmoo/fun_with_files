@@ -24,6 +24,9 @@ class TestFunWithFiles < FunWith::Files::TestCase
     
     should "respond to api" do
       assert_respond_to( FunWith::Files, :root )
+      assert_respond_to( FunWith::Files, :version )
+      
+      assert_equal "0.0.11", FunWith::Files.version   # Gotta change with every point release.  Ick.
     end
   end
 end

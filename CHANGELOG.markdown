@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+v0.0.12
+=======
+
+FilePath.touch() takes same options as FileUtils.touch()
+FilePath.glob() now takes a block (yields files one at a time)
+
+
+
 v0.0.9
 ------
 

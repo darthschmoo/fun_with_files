@@ -64,19 +64,21 @@ class TestDirectoryBuilder < FunWith::Files::TestCase
     end
     
     should "download random crap from all over the Internet" do
-      DirectoryBuilder.tmpdir do |b|
-        gist_url = "http://bannedsorcery.com/downloads/testfile.txt"
-        gist_text = "This is a file\n==============\n\n**silent**: But _bold_! [Link](http://slashdot.org)\n"
-        b.download( gist_url, "gist.txt" )
+      if_internet_works do
+        DirectoryBuilder.tmpdir do |b|
+          gist_url = "http://bannedsorcery.com/downloads/testfile.txt"
+          gist_text = "This is a file\n==============\n\n**silent**: But _bold_! [Link](http://slashdot.org)\n"
+          b.download( gist_url, "gist.txt" )
         
-        b.file( "gist.txt.2" ) do
-          b.download( gist_url )
+          b.file( "gist.txt.2" ) do
+            b.download( gist_url )
+          end
+        
+          assert b.current_file.nil?
+          assert b.current_path.join("gist.txt").exist?
+          assert b.current_path.join("gist.txt.2").exist?
+          assert_equal gist_text, b.current_path.join("gist.txt").read
         end
-        
-        assert b.current_file.nil?
-        assert b.current_path.join("gist.txt").exist?
-        assert b.current_path.join("gist.txt.2").exist?
-        assert_equal gist_text, b.current_path.join("gist.txt").read
       end
     end
   

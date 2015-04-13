@@ -8,6 +8,8 @@ module FunWith
         super( File.join( *args ) )
       end
 
+      attr_accessor :path
+      
       # If block given, temporary directory is deleted at the end of the block, and the
       # value given by the block is returned.
       # 
@@ -24,14 +26,29 @@ module FunWith
       end
 
       def join( *args, &block )
-        if block_given?
-          yield self.class.new( super(*args) )
-        else
-          self.class.new( super(*args) )
-        end
+        joined_path = self.class.new( super(*args) )
+        yield joined_path if block_given?
+        joined_path
       end
-
+      
+      def join!( *args, &block )
+        @path = self.join( *args, &block ).to_str
+        self
+      end
+      
+      def / arg
+        self.join( arg )
+      end
+      
+      def [] *args
+        self.join(*args)
+      end
+      
       alias :exists? :exist?
+      
+      def doesnt_exist?
+        self.exist? == false
+      end
       
       # If called on a file instead of a directory,
       # has the same effect as path.dirname
@@ -75,11 +92,13 @@ module FunWith
       # @path.glob( "css", "*.css" )      # Picks up all css files in the css folder
       # @path.glob( "css", :ext => :css ) # same
       # @path.glob                        # Picks up all directories, subdirectories, and files
-      # @path.glob(:all)                  # same. Note: :all cannot be used in conjunction with :ext
+      # @path.glob(:all)                  # same. Note: :all cannot be used in conjunction with :ext or any other arguments.  Which may be a mistake on my part.
       # @path.glob("**", "*")             # same
       # @path.entries                     # synonym for :all, :recursive => false
       # 
-      def glob( *args )
+      # TODO:  depth argument?  depth should override recurse.  When extention given, recursion should default to true?
+      #        the find -depth argument says depth(0) is the root of the searched directory, any files beneath would be depth(1)
+      def glob( *args, &block )
         args.push( :all ) if args.fwf_blank?
         opts = args.last.is_a?(Hash) ? args.pop : {}
         
@@ -93,7 +112,7 @@ module FunWith
         flags = case (flags_given = opts.delete(:flags))
                 when NilClass
                   0
-                when Array      # should be an array of integers
+                when Array      # should be an array of integers or File::FNM_<FLAGNAME>s
                   flags_given.inject(0) do |memo, obj|
                     memo | obj
                   end
@@ -102,7 +121,7 @@ module FunWith
                 end
         
         flags |= File::FNM_DOTMATCH if opts[:dots]
-        flags |= File::FNM_CASEFOLD if opts[:sensitive]
+        flags |= File::FNM_CASEFOLD if opts[:sensitive]   # case sensitive.  Only applies to Windows.
     
         recurse = if all_arg_given
                     if opts[:recursive] == false || opts[:recurse] == false
@@ -145,7 +164,13 @@ module FunWith
         files = Dir.glob( self.join(*args), flags ).map{ |f| class_to_return.new( f ) }
         files.reject!{ |f| f.basename.to_s.match( /^\.\.?$/ ) } unless opts[:parent_and_current]
         
-        files
+        if block_given?
+          for file in files
+            yield file
+          end
+        else
+          files
+        end
       end
       
       def entries
@@ -159,29 +184,40 @@ module FunWith
       # Raises error if self is a file and args present.
       # Raises error if the file is not accessible for writing, or cannot be created.
       # attempts to create a directory
-      def touch( *args )
+      # 
+      # Takes an options hash as the last argument, allowing same options as FileUtils.touch
+      def touch( *args, &block )
+        args, opts = extract_opts_from_args( args )
+        
         raise "Cannot create subdirectory to a file" if self.file? && args.length > 0
         touched = self.join(*args)
+        
         dir_for_touched_file = case args.length
           when 0
             self.up
           when 1
             self
-          when 2..Infinity
+          when 2..Float::INFINITY
             self.join( *(args[0..-2] ) )
           end
         
-        self.touch_dir( dir_for_touched_file ) unless dir_for_touched_file.directory?
-        FileUtils.touch( touched )
+        self.touch_dir( dir_for_touched_file, opts ) unless dir_for_touched_file.directory?
+        FileUtils.touch( touched, narrow_options( opts, FileUtils::OPT_TABLE["touch"] ) )
+        
+        yield touched if block_given?
         return touched
       end
       
+      # Takes the options of both FileUtils.touch and FileUtils.mkdir_p
+      # mkdir_p options will only matter if the directory is being created.
       def touch_dir( *args, &block )
+        args, opts = extract_opts_from_args( args )
+        
         touched = self.join(*args)
         if touched.directory?
-          FileUtils.touch( touched )    # update access time
+          FileUtils.touch( touched, narrow_options( opts, FileUtils::OPT_TABLE["touch"] ) )    # update access time
         else
-          FileUtils.mkdir_p( touched )  # create directory (and any needed parents)
+          FileUtils.mkdir_p( touched, narrow_options( opts, FileUtils::OPT_TABLE["mkdir_p"] ) )  # create directory (and any needed parents)
         end
         
         yield touched if block_given?
@@ -206,17 +242,23 @@ module FunWith
         end
       end
       
-      # Returns a [list] of the lines in the file matching the given file
-      def grep( regex )
+      # Returns a [list] of the lines in the file matching the given file.  Contrast with
+      
+      def grep( regex, &block )
         return [] unless self.file?
         matching = []
         self.each_line do |line|
           matching.push( line ) if line.match( regex )
+          yield line if block_given?
         end
+        
+        
         matching
       end
 
-      # Not the same as zero?
+      # empty? has different meanings depending on whether you're talking about a file
+      # or a directory.  A directory must not have any files or subdirectories.  A file
+      # must not have any data in it.
       def empty?
         raise Exceptions::FileDoesNotExist unless self.exist?
         
@@ -255,7 +297,10 @@ module FunWith
         [self.basename_no_ext, self.ext]
       end
       
+      
+      
       def dirname_and_basename
+        warn("FilePath#dirname_and_basename() is deprecated.  Pathname#split() already existed, and should be used instead.")
         [self.dirname, self.basename]
       end
       
@@ -341,10 +386,19 @@ module FunWith
       end
     
       
-      def timestamp( format = true )
-        self.succ( :timestamp => format )
+      def timestamp( format = true, &block )
+        nxt = self.succ( :timestamp => format )
+        yield nxt if block_given?
+        nxt
       end
     
+      # puts a string between the main part of the basename and the extension
+      # or after the basename if there is no extension.  Used to describe some
+      # file variant. 
+      # Example "/home/docs/my_awesome_screenplay.txt".fwf_filepath.specifier("final_draft")
+      #  => FunWith::Files::FilePath:/home/docs/my_awesome_screenplay.final_draft.txt
+      #
+      # Oh hush.  *I* find it useful.
       def specifier( str )
         str = str.to_s
         chunks = self.to_s.split(".")
@@ -399,25 +453,6 @@ module FunWith
       # TODO: succ_last : find the last existing file of the given sequence.
       # TODO: succ_next : find the first free file of the given sequence
     
-    
-      # File manipulation
-      def rename( filename )
-      
-      end
-    
-      def rename_all( pattern, gsubbed )
-      
-      end
-
-      def rm( secure = false )
-        if self.file?
-          FileUtils.rm( self )
-        elsif self.directory?
-          FileUtils.rmtree( self )
-        end
-      end
-
-      
       def load
         if self.directory?
           self.glob( :recursive => true, :ext => "rb" ).map(&:load)
@@ -495,6 +530,61 @@ module FunWith
           yield self
           self.up.ascend( &block )
         end
+      end
+    
+      def to_pathname
+        Pathname.new( @path )
+      end
+
+      # TODO :  Not working as intended.
+      # def separator( s = nil )
+      #   # If s is nil, then we're asking for the separator
+      #   if s.nil?
+      #     @separator || File::SEPARATOR
+      #   else
+      #     @separator = s
+      #   end
+      #   # otherwise we're installing a separator
+      # end
+      
+      protected
+      # TODO: Need a separate API for user to call
+      def _must_be_a_file
+        unless self.file?
+          calling_method = caller[0][/`.*'/][1..-2]
+          raise Errno::EACCESS.new( "Can only call FunWith::Files::FilePath##{calling_method}() on an existing file.")
+        end
+      end
+      
+      def _must_be_a_directory
+        unless self.directory?
+          calling_method = caller[0][/`.*'/][1..-2]
+          raise Errno::EACCESS.new( "Can only call FunWith::Files::FilePath##{calling_method}() on an existing directory.")
+        end
+      end
+      
+      def _must_be_writable
+        unless self.writable?
+          calling_method = caller[0][/`.*'/][1..-2]
+          raise Errno::EACCESS.new( "Error in FunWith::Files::FilePath##{calling_method}(): #{@path} not writable.")
+        end
+      end
+      
+      def narrow_options( opts, keys )
+        opts.keep_if{ |k,v| keys.include?( k ) }
+      end
+      
+      def extract_opts_from_args( args )
+        if args.last.is_a?( Hash )
+          [args[0..-2], args.last ]
+        else
+          [args, {}]
+        end
+      end
+      
+      def yield_and_return( obj, &block )
+        yield obj if block_given?
+        obj
       end
     end
   end
