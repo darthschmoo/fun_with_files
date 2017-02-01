@@ -29,12 +29,16 @@ class TestDirectoryBuilder < FunWith::Files::TestCase
         assert_equal DirectoryBuilder, b.class
         assert b.current_path
         assert b.current_path.exist?
+        
         b.file("widdershins.txt") do |f|
+          assert_empty_file( f.fwf_filepath )
+          
           f << "Hello World"
           f.flush
-        
-          assert b.current_file.exist?
-          assert_equal 11, b.current_file.size
+          
+          fil = b.current_file.fwf_filepath
+          assert_file_not_empty fil
+          assert_equal 11, fil.size
         end
       end
     end
@@ -50,7 +54,7 @@ class TestDirectoryBuilder < FunWith::Files::TestCase
         gemfile = b.current_path.join("Gemfile")
         assert gemfile.exist?
         assert !gemfile.zero?
-        assert_equal 1, gemfile.grep( /jeweler/ ).length
+        assert_equal 1, gemfile.grep( /juwelier/ ).length
       end
     end
   
@@ -68,7 +72,7 @@ class TestDirectoryBuilder < FunWith::Files::TestCase
         DirectoryBuilder.tmpdir do |b|
           gist_url = "http://bannedsorcery.com/downloads/testfile.txt"
           gist_text = "This is a file\n==============\n\n**silent**: But _bold_! [Link](http://slashdot.org)\n"
-          b.download( gist_url, "gist.txt" )
+          b.download( gist_url, "gist.txt", :md5 => "f498e76ea5690a4c29ef97d0a1d8e58e", :sha1 => "ccabf74107cba7ad69f70e45c04c3876e7f34630" )
         
           b.file( "gist.txt.2" ) do
             b.download( gist_url )

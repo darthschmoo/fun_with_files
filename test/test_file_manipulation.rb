@@ -13,7 +13,7 @@ class TestFileManipulation < FunWith::Files::TestCase
     
     should "copy LICENSE.txt" do
       copied = @license.cp( "test", "tmp" )
-      assert_match /LICENSE\.txt/, copied.to_s
+      assert_match( /LICENSE\.txt/, copied.to_s ) 
       assert_file copied
       assert_file_has_content copied
     end
@@ -85,7 +85,7 @@ class TestFileManipulation < FunWith::Files::TestCase
     
     should "symlink masterfully" do
       file = @dir.join( "original.txt" )
-      file.write( "This is the original file" )
+      file.write( "I AM SPARTACUS" )
       
       clone = file.symlink( "clone.txt" )
       clone_of_clone = clone.symlink( "clone_of_clone.txt" )
@@ -93,13 +93,50 @@ class TestFileManipulation < FunWith::Files::TestCase
       assert( clone_of_clone.symlink? )
       assert_equal( file, clone_of_clone.original )
       
-      assert_file_contents( clone_of_clone, /This is the/ )
+      assert_file_contents( clone_of_clone, /I AM SPARTACUS/ )
+      
+      subdir = @dir.join( "subdir" ).touch_dir
+      
+      subdir_clone = clone_of_clone.symlink( subdir.join( "clone.txt" ) )
+      subdir_clone_of_clone = subdir_clone.symlink( "clone_of_clone.txt" )
+      
+      assert_file_contents( subdir_clone_of_clone, /I AM SPARTACUS/ )
     end
     
     should "do nothing when opts[:noop]" do
       file = @dir.join( "not_exist.txt" )
       file.touch( :noop => true, :this_invalid_option_is_ignored => true, :also_this_one => "also ignored" )
       assert_no_file file
+    end
+    
+    should "pass exhaustive copypalooza" do
+      dir_abc = @dir.join( "A", "B", "C" ).touch_dir
+      dir_def = @dir.join( "D", "E", "F" ).touch_dir
+      
+      file_abc = dir_abc.join( "abc.txt" )
+      file_abc.write( "this space for rent" )
+      
+      assert_file_contents file_abc, /rent/
+      
+      file_def = file_abc.cp( dir_def )
+      
+      assert_match( /abc\.txt/, file_def.path )
+      assert_file_contents file_def, /rent/
+      
+      
+      # Examples:  @dir.cp( "~/tmp/dir" ) would use _find_destination_from_args() to select /Users/me/tmp/dir filepath
+      # If it's already a file, raise an error.  If the directory exists already, hmmm.... I want it to not matter, but 
+      # it matters.  And the issues raised by each operation are different.  I want them to behave as similarly as possible,
+      # but maybe it's okay to copy a directory's contents to an existing directory, but not okay to turn that existing directory
+      # into a symlink.  
+      # Assume file = "~/testdir/file.txt"
+      # 
+      # file.cp( "copy.txt" )  =>   Copies into the same directory.  
+      # file.cp( "../pouncer_of_destiny.epubforge") (an existing directory, despite the .ext)  ==>  copies into ../pouncer_of_destiny.epubforge/file.txt
+      # file.cp( "~/tmp/32fb768cd" ) (dest doesn't exist)
+      #
+      # Assume dir = "~/testdir/"  (existing directory with file.txt in it)
+      # dir.cp( "")
     end
   end
 end

@@ -21,45 +21,68 @@ module FunWith
       #
       # 
       def cp( *args )
-        dest, opts = self.destination_and_options( args )
-        FileUtils.cp_r( self, dest, narrow_options( opts, FileUtils::OPT_TABLE["cp_r"] ) )
-        dest.fwf_filepath
+        destination_and_options( args ) do |dest, opts|
+          FileUtils.cp_r( self, dest, narrow_options( opts, FileUtils::OPT_TABLE["cp_r"] ) )
+          dest.fwf_filepath
+        end
       end
       
       alias :copy :cp
       
+      # Treat as a copy then a delete?  Nah, that's a lot slower in some cases.  Should be much more in tune with what the command line program does
       def mv( *args )
         
       end
       
+      alias :move :mv
       
-      # self is the target, link is the thing linking to self
+      
+      # Logic of link()
+      #
+      # self is the target, link is the filepath entry linking to the file represented by self
       # returns filepath of the new link.  Will fall back to symbolic
-      # link if self is a directory
-      def ln( *args )
-        self.destination_and_options( args ) do |link, opts|
-          symlink = self.directory? || opts[:symbolic] || opts[:sym] || opts[:soft]
+      # link if self is a directory.  Necessary directories will be created.
+      def link *args
+        self.destination_and_options( args ) do |lnk, opts|
+          symlink_requested = self.directory? || opts[:symbolic] || opts[:sym] || opts[:soft]
         
-          if symlink
-            FileUtils.ln_s( self, link, narrow_options( opts, FileUtils::OPT_TABLE["ln_s"] ) )
+          if symlink_requested
+            self.symlink lnk, opts
           else
-            FileUtils.ln( self, link, narrow_options( opts, FileUtils::OPT_TABLE["ln"] ) )
+            opts = narrow_options opts, FileUtils::OPT_TABLE["ln"]
+            
+            FileUtils.ln self, lnk, opts
           end
           
-          link.fwf_filepath
+          lnk.fwf_filepath
         end
       end
       
-      alias :link :ln
+      alias :ln :link
 
-      
-      def ln_s( *args )
-        link, opts = self.destination_and_options( args )
-        FileUtils.ln_s( self, link, narrow_options( opts, FileUtils::OPT_TABLE["ln_s"] ) )
-        link.fwf_filepath
+      # * Where does the symlink live in the filesys.
+      # * What does it point to?
+      # * How does it point to the thing?
+      #     * absolutely
+      #     * relatively
+      #     * custom string (programmer error hilarity ensues?)
+      # It can't 
+      # What to return?  The path of the symlink, or the path of the target?
+      # 
+      def symlink( *args )
+        lnk, opts = self.destination_and_options( args )
+        
+        if opts[:absolute]
+          lnk = lnk.fwf_filepath.expand
+        else
+          lnk = lnk.fwf_filepath
+        end
+        
+        FileUtils.ln_s( self, lnk, narrow_options( opts, FileUtils::OPT_TABLE["ln_s"] ) )
+        lnk.fwf_filepath
       end
       
-      alias :symlink :ln_s
+      alias :ln_s :symlink
       
       
       def file_gsub( *args, &block )
@@ -118,10 +141,11 @@ module FunWith
         end
       end
       
+      
       protected
       def destination_and_options( args, &block )
         options = args.last.is_a?(Hash) ? args.pop : {}
-        destination = self.find_destination_from_args( args )
+        destination = self._find_destination_from_args( args )
         
         if block_given?
           yield [destination, options]
@@ -140,7 +164,7 @@ module FunWith
       # If dest doesn't exist, and src (self) is a file, dest is taken to be the complete path.
       # If dest doesn't exist, and src (self) is a directory, then dest is taken to be 
       # If dest is a directory and the source is a file, then the file will be copied into dest with the src's basename
-      def find_destination_from_args( args )
+      def _find_destination_from_args( args )
         raise ArgumentError.new("File #{self} must exist.") unless self.exist?
         
         if args.first.is_a?(Pathname) 

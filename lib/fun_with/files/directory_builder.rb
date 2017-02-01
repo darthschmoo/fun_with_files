@@ -4,11 +4,12 @@ module FunWith
     # Describes a domain-specific language for creating and populating a
     # directory of files.
     class DirectoryBuilder
-      attr_accessor :current_path, :current_file
+      attr_accessor :current_path
       
       def initialize( path )
         @paths = []
         @current_path = path.fwf_filepath
+        @current_file = nil
         make_path
       end
       
@@ -68,12 +69,18 @@ module FunWith
         end
       end
       
-      def current_file
-        @current_file ? FunWith::Files::FilePath.new( @current_file.path ) : nil
+      attr_reader :current_file
+      
+      def current_file=( file )
+        @current_file = file.fwf_filepath
       end
       
+      # def current_file
+      #   @current_file ? FunWith::Files::FilePath.new( @current_file.path ) : nil
+      # end
+      
       # if file not given, the result is appended to the current file.
-      def download( url, file = nil )
+      def download( url, file = nil, opts = {} )
         if file
           if file.fwf_filepath.relative?
             file = FunWith::Files::FilePath.new( @current_path, file )
@@ -83,7 +90,7 @@ module FunWith
             download_to_target( url, f )
           end
         elsif @current_file
-          download_to_target( url, @current_file )
+          download_to_target( url, @current_file, opts )
         else
           puts "No current file to append #{url} to."
         end
@@ -126,8 +133,8 @@ module FunWith
         @current_file = nil
       end
       
-      def download_to_target( url, file )
-        Downloader.new.download( url, file )
+      def download_to_target( url, file, signatures = {} )
+        Downloader.new.download( url, file, signatures )
       end
     end
   end

@@ -38,6 +38,8 @@ module FunWith
           
           collector
         end
+        
+        ordered_files
       end
     end
   end

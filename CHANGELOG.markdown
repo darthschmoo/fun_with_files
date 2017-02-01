@@ -1,6 +1,11 @@
 CHANGELOG
 =========
 
+v0.0.14
+=======
+
+Make symlinking actually work in a sensible way.
+
 v0.0.12
 =======
 

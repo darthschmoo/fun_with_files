@@ -19,5 +19,8 @@ class TestTouching < FunWith::Files::TestCase
       link = file.link( file.up.up.up.join( "hash.dat"), :soft => true )
       assert link.symlink?
     end
+
+    should "create a "
+
   end
 end

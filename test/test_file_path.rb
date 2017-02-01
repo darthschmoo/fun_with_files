@@ -32,7 +32,7 @@ class TestFilePath < FunWith::Files::TestCase
       assert_equal root, f1.up.up.up.up.up.up.up
       
       #invoking up didn't change original
-      assert_match /ask_for_floyd/, f1.to_s
+      assert_match( /ask_for_floyd/, f1.to_s )
       
       assert_equal f1, f2.down( "monkeylips" ).down( "ask_for_floyd" )
       assert_equal f1, f2.down( "monkeylips", "ask_for_floyd" )
@@ -207,12 +207,91 @@ class TestFilePath < FunWith::Files::TestCase
       @read_only_file = "/bin/bash".fwf_filepath   # This usually exists. I don't know enough Windows to think of a similarly ubiquitous file.
       
       if @read_only_file.file? && ! @read_only_file.writable?
-        assert_raises( Errno::EACCES ) do
+        assert_raises( Errno::EPERM ) do
           @read_only_file.touch
         end
       else
         skip
       end
+    end
+  end
+  
+  context "testing extension methods" do
+    setup do
+      @hello_path = "hello.txt".fwf_filepath
+      @dot_path0 = ".config".fwf_filepath
+      @dot_path1 = "~/.ssh".fwf_filepath
+    end
+    
+    context "test ext()" do
+    
+      should "not change path when sent nil as an argument" do
+        assert_equal @hello_path.path, @hello_path.ext( nil ).path
+      end
+    
+      should "append when given symbol" do
+        assert_equal @hello_path.path + ".tgz", @hello_path.ext( :tgz ).path
+      end
+    
+      should "append when given string" do
+        assert_equal @hello_path.path + ".tgz", @hello_path.ext( 'tgz' ).path
+      end
+    
+      should "append correctly when given leading ." do
+        assert_equal @hello_path.path + ".tgz", @hello_path.ext( '.tgz' ).path
+      end
+    
+      should "append multiple extensions as separate args" do
+        assert_equal @hello_path.path + ".backup.tar.gz", @hello_path.ext( :backup, "tar", nil, ".gz" ).path
+      end
+    
+      should "append multiple extensions as a single string" do
+        assert_equal @hello_path.path + ".backup.tar.gz", @hello_path.ext( ".backup.tar.gz" ).path
+      end
+    end
+    
+    context "test without_ext()" do
+      setup do
+
+      end
+      
+      should "pop the extension (normal)" do
+        #debugger
+        assert_equal "hello", @hello_path.without_ext.to_s
+        assert_equal "hello", @hello_path.without_ext("txt").path
+        assert_equal "hello", @hello_path.without_ext(".txt").path
+        assert_equal "hello.txt", @hello_path.without_ext(".html").path
+        assert_equal "hello.txt", @hello_path.without_ext("html").path
+        
+        assert_equal "hello", @hello_path.without_ext(:txt).path
+      end
+      
+      should "not affect dot files" do
+        assert_equal ".config", @dot_path0.without_ext.path
+        assert_equal ".config", @dot_path0.without_ext("config").path
+        assert_equal ".config", @dot_path0.without_ext(".config").path
+        assert_equal ".config", @dot_path0.without_ext(:config).path
+      end
+    end
+    
+    # Why does it return a filepath for the dirname piece, strings for the other two pieces?
+    context "test dirname_and_basename_and_ext" do
+    end
+  end
+  
+  context "test join()" do
+    setup do 
+      @path = "/".fwf_filepath
+    end
+    
+    should "accept all manner of arguments" do
+      expected = "/bin/0/file.rb".fwf_filepath
+      result = @path.join( :bin, 0, "file.rb" )
+      
+      assert_equal expected, result
+      
+      result = @path / :bin / 0 / "file.rb"
+      assert_equal expected, result
     end
   end
 end

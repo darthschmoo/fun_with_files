@@ -1,21 +1,46 @@
 require 'open-uri'            # needed by Utils::Downloader
 require 'net/http'
+require 'net/https'
+require 'openssl'
 require 'timeout'
 
 
 module FunWith
   module Files
     class Downloader
+      def self.download( *args )
+        self.new.download( *args )
+      end
+      
       # stolen from:
       # http://stackoverflow.com/questions/2263540/how-do-i-download-a-binary-file-over-http-using-ruby
-      def download( url, io )
+      
+      # options:
+      #    :md5 => <digest>  :  Running md5 on the downloaded file should result in an error
+      #    :sha256 => <digest> : 
+      def download( url, io, opts = {} )
         @uri = URI.parse( url )
         @io  = io
 
         open( url ) do |f|
           @io << f.read
         end
-
+        
+        io_path = @io.fwf_filepath
+        
+        if io_path.file?
+          if io_path.valid_digest?( opts )
+            true
+          else
+            warn( "File may not have downloaded correctly, or is validating against a bad hash #{io_path} #{opts.inspect}")
+            false
+          
+          end
+        else
+          warn( "File did not download correctly, or was deleted: #{io_path}")
+          false
+        end
+        
         # @io << Net::HTTP.get( @uri )
 
         # Net::HTTP.start( @uri.host, @uri.port ) do |http| 
@@ -28,6 +53,10 @@ module FunWith
         #     end
         #   end
         # end
+        
+        
+        
+        
       rescue Exception => e
         handle_network_errors( e )
       end

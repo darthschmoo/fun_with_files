@@ -14,8 +14,8 @@ end
 
 require 'rake'
 
-# require 'jeweler'
-Jeweler::Tasks.new do |gem|
+# require 'juwelier'
+Juwelier::Tasks.new do |gem|
   # gem is a Gem::Specification... see http://docs.rubygems.org/read/chapter/20 for more options
   gem.name = "fun_with_files"
   gem.homepage = "http://github.com/darthschmoo/fun_with_files"
@@ -50,7 +50,7 @@ DESC
               ]
 end
 
-Jeweler::RubygemsDotOrgTasks.new
+Juwelier::RubygemsDotOrgTasks.new
 
 require 'rake/testtask'
 Rake::TestTask.new(:test) do |test|

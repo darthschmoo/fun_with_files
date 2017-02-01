@@ -10,9 +10,9 @@ group :development do
   # gem "shoulda", "~> 3", ">= 3.5"
   # gem "rdoc", "~> 3.12"
   # gem "bundler", "~> 1.5"
-  # gem "jeweler", "~> 2.0"
+  # gem "juwelier", "~> 2.0"
   # gem "debugger", "~> 1.6"
-  gem "fun_with_testing", "~> 0.0"
+  gem "fun_with_testing", "~> 0.0", ">= 0.0.5"
 end
 
 gem "xdg", "~> 2"

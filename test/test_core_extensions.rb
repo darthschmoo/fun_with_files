@@ -26,6 +26,7 @@ class TestCoreExtensions < FunWith::Files::TestCase
     should "fwf_blank? nicely." do
       assert_equal false, { 1 => 2 }.fwf_blank?
       assert_equal true, {}.fwf_blank?
+      assert_equal true, true.fwf_present?
     end
   end
 end

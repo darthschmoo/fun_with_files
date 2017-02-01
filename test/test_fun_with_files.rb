@@ -26,7 +26,7 @@ class TestFunWithFiles < FunWith::Files::TestCase
       assert_respond_to( FunWith::Files, :root )
       assert_respond_to( FunWith::Files, :version )
       
-      assert_equal "0.0.13", FunWith::Files.version   # Gotta change with every point release.  Ick.
+      assert_equal "0.0.14", FunWith::Files.version   # Gotta change with every point release.  Ick.
     end
   end
 end

@@ -7,11 +7,11 @@ class TestDescent < FunWith::Files::TestCase
     ascent = []
     descent = []
     
-    FunWith::Files.root.ascend do |path|
+    root.ascend do |path|
       ascent << path
     end
     
-    FunWith::Files.root.descend do |path|
+    root.descend do |path|
       descent << path
     end
 
