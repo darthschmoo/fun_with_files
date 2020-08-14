@@ -1,4 +1,4 @@
-= fun_with_files
+# fun_with_files #
 
 FunWith::Files adds a bit of whimsy to your file manipulations, if that's what you're looking for.
 
@@ -36,13 +36,13 @@ To the code!
     
 
 
-=== Linking files
+### Linking files ###
 
 While fwf.symlink and fwf.link are both backed by FileUtils.ln / FileUtils.ln_s, the defaults are somewhat different
 
 
 
-== DirectoryBuilder
+## DirectoryBuilder ##
 
 DirectoryBuilder is a class for defining and populating a file hierarchy with relative ease.  DirectoryBuilder is probably most easily demonstrated by example.  Sample code:
 
@@ -105,7 +105,7 @@ DirectoryBuilder is a class for defining and populating a file hierarchy with re
     
 
 
-== Contributing to fun_with_files
+## Contributing to fun_with_files ##
 
 Boilerplate from Juwelier, but seems to make sense.
 
@@ -117,7 +117,7 @@ Boilerplate from Juwelier, but seems to make sense.
 * Make sure to add tests for it. This is important so I don't break it in a future version unintentionally.
 * Please try not to mess with the Rakefile, version, or history. If you want to have your own version, or is otherwise necessary, that is fine, but please isolate to its own commit so I can cherry-pick around it.
 
-== Copyright
+## Copyright ##
 
 Copyright (c) 2020 Bryce Anderson. See LICENSE.txt for further details.
 
