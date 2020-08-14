@@ -21,8 +21,10 @@ require 'fun_with_files'
 
 class FunWith::Files::TestCase < FunWith::Testing::TestCase
   include FunWith::Files
-  include FunWith::Testing::Assertions::FunWithFiles
-  include FunWith::Testing::Assertions::Basics
+  
+  self.install_fun_with_files_assertions
+  # include FunWith::Testing::Assertions::FunWithFiles
+  # include FunWith::Testing::Assertions::Basics
   
   def tmpdir( &block )
     FilePath.tmpdir do |d|

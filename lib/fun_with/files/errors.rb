@@ -1,5 +1,9 @@
 module FunWith
   module Files
-    class NoSuchFile < Exception; end
+    module Error
+      # Useful... why, exactly?
+      class FunWithFilesError < StandardError
+      end
+    end
   end
 end

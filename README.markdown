@@ -1,4 +1,4 @@
-= fun_with_files =
+= fun_with_files
 
 FunWith::Files adds a bit of whimsy to your file manipulations, if that's what you're looking for.
 
@@ -36,18 +36,17 @@ To the code!
     
 
 
-=== Linking files ===
+=== Linking files
 
 While fwf.symlink and fwf.link are both backed by FileUtils.ln / FileUtils.ln_s, the defaults are somewhat different
 
 
 
-== DirectoryBuilder ==
+== DirectoryBuilder
 
 DirectoryBuilder is a class for defining and populating a file hierarchy with relative ease.  DirectoryBuilder is probably most easily demonstrated by example.  Sample code:
 
-    # starts by creating directory.  If parent 
-    # directories don't exist, they will soon.
+    # starts by creating directory.  If parent directories don't exist, they will soon.
     DirectoryBuilder.create( '~/project' ) do |b|
       b.dir("images") do                      # creates subdirectory "images", which gets populated within the block
         for img in src_dir.entries.select{|img| img.extension == ".png"}
@@ -60,7 +59,7 @@ DirectoryBuilder is a class for defining and populating a file hierarchy with re
 
       b.dir("text", "scenes") do   # creates ~/project/text/scenes subdir (creating two new directories text/ and text/scene/)
         b.file( "adventure_time.txt" ) do |f|
-          f << "Fill this in later"
+          f << "Fill this in later"             # text is written to the file
         end
 
         # calling .file without feeding it a block leaves it open for writing,
@@ -120,6 +119,5 @@ Boilerplate from Juwelier, but seems to make sense.
 
 == Copyright
 
-Copyright (c) 2013 Bryce Anderson. See LICENSE.txt for
-further details.
+Copyright (c) 2020 Bryce Anderson. See LICENSE.txt for further details.
 

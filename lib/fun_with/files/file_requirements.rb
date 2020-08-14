@@ -18,6 +18,10 @@ module FunWith
       def needs_to_be_empty error_msg = "Path needs to point to"
         _raise_error_if_not self.empty?, error_msg, Errno::ENOENT
       end
+      
+      def needs_to_be_a_directory error_msg = "Path is not a directory"
+        _raise_error_if_not self.directory?, error_msg, Errno::ENOENT
+      end
     end
   end
 end

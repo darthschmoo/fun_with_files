@@ -99,6 +99,7 @@ class TestFilePath < FunWith::Files::TestCase
     should "sequence files nicely" do
       seqfile = @tmp_dir.join("sequence.txt")
       
+      debugger
       10.times do |i|
         seqfile.write( i.to_s )
         seqfile = seqfile.succ
@@ -129,20 +130,21 @@ class TestFilePath < FunWith::Files::TestCase
     end
     
     should "sequence files with datestamps" do
+      flunk "need a better way to test this"
+      
       seqfile = @tmp_dir.join("sequence.txt")
       
       10.times do |i|
-        seqfile.write( i.to_s )
+        seqfile.write( i.to_s ) && puts( i.to_s + " " )
         seqfile = seqfile.succ( timestamp: true )
-        sleep(0.002)
+        sleep(2)
       end
       
       files = seqfile.succession( timestamp: true )
       assert files.length == 10
       
       files.each_with_index do |file, i|
-        assert_file file
-        assert_file_contents file, i.to_s
+        assert_file_contents file, i.to_s     # also confirms existence of the file
       end
       
       file_name_strings = files.map(&:to_s)
@@ -293,5 +295,9 @@ class TestFilePath < FunWith::Files::TestCase
       result = @path / :bin / 0 / "file.rb"
       assert_equal expected, result
     end
+  end
+  
+  context "testing block form" do
+    
   end
 end

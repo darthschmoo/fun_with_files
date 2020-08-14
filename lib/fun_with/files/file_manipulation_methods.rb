@@ -22,16 +22,22 @@ module FunWith
       # 
       def cp( *args )
         destination_and_options( args ) do |dest, opts|
-          FileUtils.cp_r( self, dest, narrow_options( opts, FileUtils::OPT_TABLE["cp_r"] ) )
+          FileUtils.cp_r( self, dest, ** Utils::Opts.narrow_options( opts, FileUtils::OPT_TABLE["cp_r"] ) )
           dest.fwf_filepath
         end
       end
       
       alias :copy :cp
       
-      # Treat as a copy then a delete?  Nah, that's a lot slower in some cases.  Should be much more in tune with what the command line program does
-      def mv( *args )
-        
+      # Treat as a copy then a delete?  Nah, that's a lot slower especially for larger files.  Should be much more in tune with what the command line program does.
+      # Treat it as syntactic sugar for FileUtils.mv?
+      # Also want to update the path to the new location - not implemented yet
+      #
+      # 
+      def mv( dst, options = {} )
+        # what does FileUtils.rm actually return?  Glancing an the source, it
+        # seems to only throw errors.
+        FileUtils.mv( self, dst, **options )
       end
       
       alias :move :mv
@@ -45,13 +51,13 @@ module FunWith
       def link *args
         self.destination_and_options( args ) do |lnk, opts|
           symlink_requested = self.directory? || opts[:symbolic] || opts[:sym] || opts[:soft]
-        
+          
           if symlink_requested
             self.symlink lnk, opts
           else
-            opts = narrow_options opts, FileUtils::OPT_TABLE["ln"]
-            
-            FileUtils.ln self, lnk, opts
+            opts = Utils::Opts.narrow_options opts, FileUtils::OPT_TABLE["ln"]
+            debugger
+            FileUtils.ln self, lnk, ** opts
           end
           
           lnk.fwf_filepath
@@ -78,7 +84,7 @@ module FunWith
           lnk = lnk.fwf_filepath
         end
         
-        FileUtils.ln_s( self, lnk, narrow_options( opts, FileUtils::OPT_TABLE["ln_s"] ) )
+        FileUtils.ln_s( self, lnk, ** Utils::Opts.narrow_options( opts, FileUtils::OPT_TABLE["ln_s"] ) )
         lnk.fwf_filepath
       end
       
@@ -113,7 +119,7 @@ module FunWith
       
       # TODO: If it's truncated to a longer length than the original file,
       # pad with zeros?  That's how the UNIX truncate command works.
-      def truncate( len )
+      def truncate( len = 0 )
         _must_be_a_file     # raises error
         _must_be_writable   # raises error
         

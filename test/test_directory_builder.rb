@@ -54,7 +54,7 @@ class TestDirectoryBuilder < FunWith::Files::TestCase
         gemfile = b.current_path.join("Gemfile")
         assert gemfile.exist?
         assert !gemfile.zero?
-        assert_equal 1, gemfile.grep( /juwelier/ ).length
+        assert_equal 1, gemfile.grep( /fun_with_testing/ ).length
       end
     end
   
@@ -70,18 +70,37 @@ class TestDirectoryBuilder < FunWith::Files::TestCase
     should "download random crap from all over the Internet" do
       if_internet_works do
         DirectoryBuilder.tmpdir do |b|
-          gist_url = "http://bannedsorcery.com/downloads/testfile.txt"
-          gist_text = "This is a file\n==============\n\n**silent**: But _bold_! [Link](http://slashdot.org)\n"
-          b.download( gist_url, "gist.txt", :md5 => "f498e76ea5690a4c29ef97d0a1d8e58e", :sha1 => "ccabf74107cba7ad69f70e45c04c3876e7f34630" )
+          # The file Bryce uses on Github to prove to Keybase that he owns this Github account
+          # I used to host a test file on my own site, but apparently if you stop paying DigitalOcean 
+          # for a few measly months your website goes away.  Github will probably provide a more
+          # stable target.
+          url = "https://gist.githubusercontent.com/darthschmoo/ac3ca60338ed41e87b94448f9e851fd3/raw" + 
+                "/3cba6b60b552266f4d5aa92d307ef2cda0cf228b/fun_with_files.download.txt"
+                
+          dest_file  = "download.01.txt"
+          dest_file2 = "download.02.txt"
+          
+          downloaded_text        = "You have successfully downloaded a file.  Huzzah!"
+          downloaded_text_md5    = "2e9d3a924ea36c860c3dd491166ec1ce"
+          downloaded_text_sha1   = "d9be1d5b5c8bd1de6b1dcb99e02cab8e35ed9659"
+          downloaded_text_sha256 = "dc9a6e5d571b39b9754b9592a3b586db8186121d37ec72f7fcbf45241cc43aa6"
+
+          b.download( url, dest_file, 
+                      :md5    => downloaded_text_md5,
+                      :sha1   => downloaded_text_sha1,
+                      :sha256 => downloaded_text_sha256
+          )
+          
         
-          b.file( "gist.txt.2" ) do
-            b.download( gist_url )
+          b.file( dest_file2 ) do
+            b.download( url )
           end
         
           assert b.current_file.nil?
-          assert b.current_path.join("gist.txt").exist?
-          assert b.current_path.join("gist.txt.2").exist?
-          assert_equal gist_text, b.current_path.join("gist.txt").read
+          assert b.current_path.join( dest_file ).exist?
+          assert b.current_path.join( dest_file2 ).exist?
+          assert_equal downloaded_text, b.current_path.join( dest_file ).read
+          assert_equal downloaded_text, b.current_path.join( dest_file2 ).read
         end
       end
     end
@@ -112,7 +131,7 @@ class TestDirectoryBuilder < FunWith::Files::TestCase
           end
         end
         
-        assert "Hello", b.current_path.join("earth", "air", "fire", "water", "hello.txt").read
+        assert_equal "Hello", b.current_path.join("earth", "air", "fire", "water", "hello.txt").read
         
         b.dir( "fire", "water", "earth", "air" ) do
           assert b.current_path.exist?

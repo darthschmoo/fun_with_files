@@ -22,6 +22,10 @@ module FunWith
         XDG['DATA'].fwf_filepath.join( *args )
       end
       
+      def cache_dir( *args )
+        XDG['CACHE_HOME'].fwf_filepath.join( *args )
+      end
+      
       # Honestly this is a token attempt at Windows compatibility.
       # This could go wrong all sorts of ways, and hasn't been tested
       # on Windows.  More to the point, when a Windows machine has

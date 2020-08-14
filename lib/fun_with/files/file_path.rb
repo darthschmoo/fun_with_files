@@ -4,8 +4,9 @@ module FunWith
       SUCC_DIGIT_COUNT = 6
       DEFAULT_TIMESTAMP_FORMAT = "%Y%m%d%H%M%S%L"
 
-      def initialize( *args )
-        super( File.join( *args ) )
+      def initialize( *args, &block )
+        super( File.join( *(args.map(&:to_s) ) ) )
+        _yield_and_return( self, &block )
       end
 
       attr_accessor :path
@@ -40,21 +41,20 @@ module FunWith
 
       def join( *args, &block )
         joined_path = self.class.new( super( *(args.map(&:to_s) ) ) )
-        yield joined_path if block_given?
-        joined_path
+        _yield_and_return( joined_path, &block )
       end
       
       def join!( *args, &block )
         @path = self.join( *args, &block ).to_str
-        self
+        _yield_and_return( self, &block )
       end
       
-      def / arg
-        self.join( arg )
+      def /( arg, &block )
+        _yield_and_return( self.join( arg ), &block )
       end
       
-      def [] *args
-        self.join(*args)
+      def []( *args, &block )
+        _yield_and_return( self.join(*args), &block )
       end
       
       
@@ -193,8 +193,16 @@ module FunWith
         end
       end
 
-      def entries
-        self.glob( :recurse => false )
+      def entries( &block )
+        rval = self.glob( :recurse => false )
+        
+        if block_given?
+          for entry in rval
+            yield entry
+          end
+        end
+        
+        rval
       end
 
       def expand
@@ -207,7 +215,7 @@ module FunWith
       #
       # Takes an options hash as the last argument, allowing same options as FileUtils.touch
       def touch( *args, &block )
-        args, opts = extract_opts_from_args( args )
+        args, opts = Utils::Opts.extract_opts_from_args( args )
 
         raise "Cannot create subdirectory to a file" if self.file? && args.length > 0
         touched = self.join(*args)
@@ -222,7 +230,7 @@ module FunWith
           end
 
         self.touch_dir( dir_for_touched_file, opts ) unless dir_for_touched_file.directory?
-        FileUtils.touch( touched, narrow_options( opts, FileUtils::OPT_TABLE["touch"] ) )
+        FileUtils.touch( touched, ** Utils::Opts.narrow_options( opts, FileUtils::OPT_TABLE["touch"] ) )
 
         yield touched if block_given?
         return touched
@@ -231,13 +239,13 @@ module FunWith
       # Takes the options of both FileUtils.touch and FileUtils.mkdir_p
       # mkdir_p options will only matter if the directory is being created.
       def touch_dir( *args, &block )
-        args, opts = extract_opts_from_args( args )
+        args, opts = Utils::Opts.extract_opts_from_args( args )
 
         touched = self.join(*args)
         if touched.directory?
-          FileUtils.touch( touched, narrow_options( opts, FileUtils::OPT_TABLE["touch"] ) )    # update access time
+          FileUtils.touch( touched, ** Utils::Opts.narrow_options( opts, FileUtils::OPT_TABLE["touch"] ) )    # update access time
         else
-          FileUtils.mkdir_p( touched, narrow_options( opts, FileUtils::OPT_TABLE["mkdir_p"] ) )  # create directory (and any needed parents)
+          FileUtils.mkdir_p( touched, ** Utils::Opts.narrow_options( opts, FileUtils::OPT_TABLE["mkdir_p"] ) )  # create directory (and any needed parents)
         end
 
         yield touched if block_given?
@@ -245,7 +253,7 @@ module FunWith
       end
 
       def write( *args, &block )
-        args, opts = extract_opts_from_args( args )
+        args, opts = Utils::Opts.extract_opts_from_args( args )
 
         content = args.first
 
@@ -320,6 +328,22 @@ module FunWith
       # TODO: Why not?
       def basename_no_ext
         self.basename.to_s.split(".")[0..-2].join(".")
+      end
+      
+      # 
+      def size( units = :B )
+        sz = self.stat.size
+        
+        case units
+        when :B
+          sz
+        when :K
+          (sz / 1024.0).round(1)
+        when :M
+          (sz / 1048576.0).round(1)
+        when :G
+          (sz / 1073741824.0).round(1)
+        end
       end
 
       # Returns the path, stripped of the final extension (.ARG).
@@ -415,6 +439,10 @@ module FunWith
           self.class.new( "#{@path}#{appended_to_path}" )
         end
       end
+      
+      def ext?( e )
+        e.to_str == self.ext
+      end
 
       # base, ext =  @path.basename_and_ext
       def basename_and_ext
@@ -452,31 +480,37 @@ module FunWith
         self.class.new( dir )
       end
 
-      def fwf_filepath
+      def fwf_filepath( &block )
+        yield self if block_given?
         self
       end
 
       # Gives a sequence of files.  Examples:
       # file.dat --> file.000000.dat
       # file_without_ext --> file_without_ext.000000
-      # If it sees a six-digit number at or near the end of the
-      # filename, it increments it.
+      # If it sees a six-digit number at the end of the
+      # filename (or immediately preceding the file extension), it increments it
       #
       # You can change the length of the sequence string by passing
       # in an argument, but it should always be the same value for
-      # a given set of files.
+      # a given collection of files.
       #
       # TODO: Need to get this relying on the specifier() method.
-      def succ( opts = { digit_count: SUCC_DIGIT_COUNT, timestamp: false } )
+      def succ( opts = {} )
+        digit_count = opts.fetch(:digit_count){ SUCC_DIGIT_COUNT }
+        timestamp   = opts.fetch(:timestamp){ false }
+        time        = opts.fetch(:time){ Time.now }
+        
         if timestamp = opts[:timestamp]
           timestamp_format = timestamp.is_a?(String) ? timestamp : DEFAULT_TIMESTAMP_FORMAT
-          timestamp = Time.now.strftime( timestamp_format )
+          timestamp = time.strftime( timestamp_format )
           digit_count = timestamp.length
         else
           timestamp = false
           digit_count = opts[:digit_count]
         end
-
+        
+        # 
         chunks = self.basename.to_s.split(".")
         # not yet sequence stamped, no file extension.
         if chunks.length == 1
@@ -505,25 +539,27 @@ module FunWith
         else
           chunks = [chunks[0..-2], (timestamp ? timestamp : "0" * digit_count), chunks[-1]].flatten
         end
-
+        
         self.up.join( chunks.join(".") )
       end
-
-
+      
+      
       def timestamp( format = true, &block )
         nxt = self.succ( :timestamp => format )
-        yield nxt if block_given?
-        nxt
+        
+        _yield_and_return( nxt, &block )
       end
-
+      
       # puts a string between the main part of the basename and the extension
       # or after the basename if there is no extension.  Used to describe some
       # file variant.
+      # 
       # Example "/home/docs/my_awesome_screenplay.txt".fwf_filepath.specifier("final_draft")
       #  => FunWith::Files::FilePath:/home/docs/my_awesome_screenplay.final_draft.txt
       #
-      # Oh hush.  *I* find it useful.
-      def specifier( str )
+      # For the purposes of this method, anything after the last period in the filename
+      # is considered the extension.
+      def specifier( str, &block )
         str = str.to_s
         chunks = self.to_s.split(".")
 
@@ -533,9 +569,13 @@ module FunWith
           chunks = chunks[0..-2] + [str] + [chunks[-1]]
         end
 
-        chunks.join(".").fwf_filepath
+        f = chunks.join(".").fwf_filepath
+        _yield_and_return( f, &block )
       end
-
+      
+      # Returns the "wildcarded" version of the filename, suitable for finding related files
+      # with similar timestamps.  
+      #
       # TODO: succession : enumerates a sequence of files that get passed
       # to a block in order.
       def succession( opts = { digit_count: SUCC_DIGIT_COUNT, timestamp: false } )
@@ -593,43 +633,9 @@ module FunWith
       # the failed requirement in order to try it later.  Doesn't fail until it goes through
       # a full loop where none of the required files were successful.
       def requir
-        if self.directory?
-          requirements = self.glob( :recursive => true, :ext => "rb" )
-          successfully_required = 1337  # need to break into initial loop
-          failed_requirements = []
-          error_messages = []
-
-          while requirements.length > 0 && successfully_required > 0
-            successfully_required = 0
-            failed_requirements = []
-            error_messages = []
-
-            for requirement in requirements
-              begin
-                requirement.requir
-                successfully_required += 1
-              rescue Exception => e
-                failed_requirements << requirement
-                error_messages << "Error while requiring #{requirement} : #{e.message} (#{e.class})"
-              end
-            end
-
-            requirements = failed_requirements
-          end
-
-          if failed_requirements.length > 0
-            msg = "requiring directory #{self} failed:\n"
-            for message in error_messages
-              msg << "\n\terror message: #{message}"
-            end
-
-            raise NameError.new(msg)
-          end
-        else
-          require self.expand.gsub( /\.rb$/, '' )
-        end
+        FunWith::Files::Requirements::Manager.require_files( self )
       end
-
+      
       def root?
         self == self.up
       end
@@ -679,37 +685,26 @@ module FunWith
       def _must_be_a_file
         unless self.file?
           calling_method = caller[0][/`.*'/][1..-2]
-          raise Errno::EACCESS.new( "Can only call FunWith::Files::FilePath##{calling_method}() on an existing file.")
+          raise Errno::EACCES.new( "Can only call FunWith::Files::FilePath##{calling_method}() on an existing file.")
         end
       end
 
       def _must_be_a_directory
         unless self.directory?
           calling_method = caller[0][/`.*'/][1..-2]
-          raise Errno::EACCESS.new( "Can only call FunWith::Files::FilePath##{calling_method}() on an existing directory.")
+          raise Errno::EACCES.new( "Can only call FunWith::Files::FilePath##{calling_method}() on an existing directory." )
         end
       end
 
       def _must_be_writable
         unless self.writable?
           calling_method = caller[0][/`.*'/][1..-2]
-          raise Errno::EACCESS.new( "Error in FunWith::Files::FilePath##{calling_method}(): #{@path} not writable.")
+          raise Errno::EACCES.new( "Error in FunWith::Files::FilePath##{calling_method}(): #{@path} not writable." )
         end
       end
-
-      def narrow_options( opts, keys )
-        opts.keep_if{ |k,v| keys.include?( k ) }
-      end
-
-      def extract_opts_from_args( args )
-        if args.last.is_a?( Hash )
-          [args[0..-2], args.last ]
-        else
-          [args, {}]
-        end
-      end
-
-      def yield_and_return( obj, &block )
+      
+      # Simplifies some of the block-formed methods
+      def _yield_and_return( obj = self, &block )
         yield obj if block_given?
         obj
       end

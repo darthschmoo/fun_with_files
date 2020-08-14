@@ -22,7 +22,7 @@ module FunWith
         @uri = URI.parse( url )
         @io  = io
 
-        open( url ) do |f|
+        URI.open( url ) do |f|
           @io << f.read
         end
         
@@ -57,7 +57,7 @@ module FunWith
         
         
         
-      rescue Exception => e
+      rescue StandardError => e
         handle_network_errors( e )
       end
 

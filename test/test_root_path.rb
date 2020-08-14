@@ -13,6 +13,16 @@ class TestRootPath < FunWith::Files::TestCase
     rootify_and_test( obj, path )
   end
   
+  context "FunWith::Files.root" do
+    should "be a directory" do
+      assert_directory( FunWith::Files.root )
+      assert_empty_directory( FunWith::Files.root( :test, :tmp ) )
+      assert_empty_directory( FunWith::Files.root / :test / :tmp )
+      assert_empty_directory( FunWith::Files.root / "test" / "tmp" )
+      
+    end
+  end
+  
   def rootify_and_test( obj, path )
     RootPath.rootify( obj, path )
     assert obj.respond_to?(:root)

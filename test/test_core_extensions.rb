@@ -28,5 +28,10 @@ class TestCoreExtensions < FunWith::Files::TestCase
       assert_equal true, {}.fwf_blank?
       assert_equal true, true.fwf_present?
     end
+    
+    should "respond to fwf_filepath" do
+      assert_respond_to ".", :fwf_filepath
+      assert_respond_to ".".fwf_filepath, :fwf_filepath
+    end
   end
 end

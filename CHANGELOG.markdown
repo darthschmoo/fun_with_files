@@ -1,13 +1,20 @@
 CHANGELOG
 =========
 
-v0.0.14
-=======
+v0.0.17
+-------
 
-Make symlinking actually work in a sensible way.
+* `.without_ext()` now takes an argument, will only strip that extension.
+* updated `fun_with_testing` dependency, moved FunWith::Files-related stuff from that gem to this one.
+
+
+v0.0.14
+-------
+
+???
 
 v0.0.12
-=======
+-------
 
 FilePath.touch() takes same options as FileUtils.touch()
 FilePath.glob() now takes a block (yields files one at a time)

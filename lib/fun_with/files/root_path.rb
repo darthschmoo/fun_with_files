@@ -1,12 +1,12 @@
 module FunWith
   module Files
     module RootPathExtensions
-      def root( *args )
+      def root( *args, &block )
         if args.length > 0
           args.unshift( @root_path )
-          FilePath.new( *args )
+          FilePath.new( *args, &block )
         else
-          FilePath.new( @root_path )
+          FilePath.new( @root_path, &block )
         end
       end
       
