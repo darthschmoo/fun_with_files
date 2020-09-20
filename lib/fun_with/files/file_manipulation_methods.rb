@@ -15,6 +15,12 @@ module FunWith
       # ln_s(list, destdir, options)
       # ln_sf(src, dest, options)
       
+      # 
+      
+      
+     # => [:alias_method, :ancestors, :attr, :attr_accessor, :attr_reader, :attr_writer, :autoload, :autoload?, :cd, :chdir, :chmod, :chmod_R, :chown, :chown_R, :class_eval, :class_exec, :class_variable_defined?, :class_variable_get, :class_variable_set, :class_variables, :cmp, :collect_method, :commands, :compare_file, :compare_stream, :const_defined?, :const_get, :const_missing, :const_set, :constants, :copy, :copy_entry, :copy_file, :copy_stream, :cp, :cp_r, :define_method, :deprecate_constant, :getwd, :have_option?, :identical?, :include, :include?, :included_modules, :install, :instance_method, :instance_methods, :link, :ln, :ln_s, :ln_sf, :makedirs, :method_defined?, :mkdir, :mkdir_p, :mkpath, :module_eval, :module_exec, :move, :mv, :name, :options, :options_of, :prepend, :private_class_method, :private_constant, :private_instance_methods, :private_method_defined?, :private_module_function, :protected_instance_methods, :protected_method_defined?, :public_class_method, :public_constant, :public_instance_method, :public_instance_methods, :public_method_defined?, :pwd, :remove, :remove_class_variable, :remove_dir, :remove_entry, :remove_entry_secure, :remove_file, :remove_method, :rm, :rm_f, :rm_r, :rm_rf, :rmdir, :rmtree, :safe_unlink, :singleton_class?, :symlink, :touch, :undef_method, :uptodate?] 
+      
+      
       # opts are the last argument, and are passed to FileUtils.cp_r
       # returns the destination path.
       # How to detect failure?  What to return on failure?
@@ -22,7 +28,7 @@ module FunWith
       # 
       def cp( *args )
         destination_and_options( args ) do |dest, opts|
-          FileUtils.cp_r( self, dest, ** Utils::Opts.narrow_options( opts, FileUtils::OPT_TABLE["cp_r"] ) )
+          FileUtils.cp_r( self, dest, ** Utils::Opts.narrow_file_utils_options( opts, :cp_r ) )
           dest.fwf_filepath
         end
       end
@@ -55,9 +61,7 @@ module FunWith
           if symlink_requested
             self.symlink lnk, opts
           else
-            opts = Utils::Opts.narrow_options opts, FileUtils::OPT_TABLE["ln"]
-            debugger
-            FileUtils.ln self, lnk, ** opts
+            FileUtils.ln self, lnk, ** Utils::Opts.narrow_file_utils_options( opts, :ln )
           end
           
           lnk.fwf_filepath
@@ -84,7 +88,7 @@ module FunWith
           lnk = lnk.fwf_filepath
         end
         
-        FileUtils.ln_s( self, lnk, ** Utils::Opts.narrow_options( opts, FileUtils::OPT_TABLE["ln_s"] ) )
+        FileUtils.ln_s( self, lnk, ** Utils::Opts.narrow_file_utils_options( opts, :ln_s ) )
         lnk.fwf_filepath
       end
       

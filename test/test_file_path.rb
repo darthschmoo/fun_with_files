@@ -10,17 +10,17 @@ class TestFilePath < FunWith::Files::TestCase
     end
     
     should "have location class methods available" do
-      assert_respond_to( FunWith::Files::FilePath, :home )
-      assert_respond_to( FunWith::Files::FilePath, :config_dir )
-      assert_respond_to( FunWith::Files::FilePath, :root )
-      assert_respond_to( FunWith::Files::FilePath, :data_dir )
+      assert_respond_to FunWith::Files::FilePath, :home 
+      assert_respond_to FunWith::Files::FilePath, :config_dir
+      assert_respond_to FunWith::Files::FilePath, :root
+      assert_respond_to FunWith::Files::FilePath, :data_dir 
     end
     
     
     should "join smoothly" do
       bin_dir = "/bin".fwf_filepath
-      assert_equal( "/bin/bash", bin_dir.join("bash").to_s )
-      assert_equal( "/bin/bash", bin_dir.join("bash".fwf_filepath).to_s )
+      assert_equal "/bin/bash", bin_dir.join("bash").to_s
+      assert_equal "/bin/bash", bin_dir.join("bash".fwf_filepath).to_s
     end
 
     should "go up/down when asked" do
@@ -99,18 +99,20 @@ class TestFilePath < FunWith::Files::TestCase
     should "sequence files nicely" do
       seqfile = @tmp_dir.join("sequence.txt")
       
-      debugger
+      files = [seqfile]
+      
       10.times do |i|
         seqfile.write( i.to_s )
         seqfile = seqfile.succ
+        files << seqfile
       end
       
-      assert_file @tmp_dir.join("sequence.txt")
-      assert_file @tmp_dir.join("sequence.000000.txt")
-      assert_file @tmp_dir.join("sequence.000008.txt")
+      assert_file files[0]
+      assert_file files[1]
+      assert_file files[9]
       
-      assert_file_contents @tmp_dir.join("sequence.txt"), "0"
-      assert_file_contents @tmp_dir.join("sequence.000008.txt"), "9"
+      assert_file_contents files[0], "0"
+      assert_file_contents files[9], "9"
     end
     
     should "sequence files with custom stamp length" do
@@ -129,36 +131,7 @@ class TestFilePath < FunWith::Files::TestCase
       assert_file_contents @tmp_dir.join("sequence.0008.txt"), "9"
     end
     
-    should "sequence files with datestamps" do
-      flunk "need a better way to test this"
-      
-      seqfile = @tmp_dir.join("sequence.txt")
-      
-      10.times do |i|
-        seqfile.write( i.to_s ) && puts( i.to_s + " " )
-        seqfile = seqfile.succ( timestamp: true )
-        sleep(2)
-      end
-      
-      files = seqfile.succession( timestamp: true )
-      assert files.length == 10
-      
-      files.each_with_index do |file, i|
-        assert_file_contents file, i.to_s     # also confirms existence of the file
-      end
-      
-      file_name_strings = files.map(&:to_s)
-      assert_equal file_name_strings[1..-1], file_name_strings[1..-1].sort
-    end
 
-    should "timestamp files using the timestamp() method" do
-      timestampable_file = @tmp_dir.join( "timestamped.dat" )
-      timestamped_file1  = timestampable_file.timestamp
-      timestamped_file2  = timestampable_file.timestamp("%Y")
-
-      assert timestamped_file1 =~ /timestamped.\d{17}.dat$/
-      assert timestamped_file2 =~ /timestamped.\d{4}.dat$/
-    end
   end
   
 

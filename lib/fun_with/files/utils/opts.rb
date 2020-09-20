@@ -16,6 +16,10 @@ module FunWith
         def self.narrow_options( opts, keys )
           opts.keep_if{ |k,v| keys.include?( k ) }
         end
+        
+        def self.narrow_file_utils_options( opts, cmd )
+          self.narrow_options( opts, FileUtils::OPT_TABLE[ cmd.to_s ] )
+        end
       end
     end
   end

@@ -54,6 +54,9 @@ module FunWith
       # TODO: how to get around the :md6 problem?  That is, where the
       # user is sending the wrong key, and hence not getting false back
       def valid_digest?( opts )
+        digest_opts = Utils::Opts.narrow_options( opts, DIGEST_METHODS )
+        
+        
         for method, digest in opts
           if DIGEST_METHODS.include?( method )
             return false unless self.send( method ) == digest

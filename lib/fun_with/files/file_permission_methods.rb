@@ -16,12 +16,12 @@ module FunWith
       
       # options:  :noop, :verbose
       def chmod( mode, opts = {} )
-        FileUtils.chmod( mode, self, ** Utils::Opts.narrow_options( opts, FileUtils::OPT_TABLE["chmod"] ) )
-      end
+        FileUtils.chmod( mode, self, ** Utils::Opts.narrow_file_utils_options( opts, :chmod ) )
+      end 
       
       # options:  :noop, :verbose
       def chown( user, opts = {} )
-        FileUtils.chown( user, self, ** Utils::Opts.narrow_options( opts, FileUtils::OPT_TABLE["chown"] ) )
+        FileUtils.chown( user, self, ** Utils::Opts.narrow_file_utils_options( opts, :chown ) )
       end
       
       def owner

@@ -40,26 +40,10 @@ module FunWith
           warn( "File did not download correctly, or was deleted: #{io_path}")
           false
         end
-        
-        # @io << Net::HTTP.get( @uri )
-
-        # Net::HTTP.start( @uri.host, @uri.port ) do |http| 
-        #   http.request_get( @uri.path ) do |request| 
-        #     request.read_body do |seg|
-        #       puts "==============================  #{seg} ============================="
-        #       io << seg
-        #       #hack -- adjust to suit:
-        #       sleep 0.005 
-        #     end
-        #   end
-        # end
-        
-        
-        
-        
       rescue StandardError => e
         handle_network_errors( e )
       end
+      
 
       def handle_network_errors( e )
         raise e

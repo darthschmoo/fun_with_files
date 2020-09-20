@@ -2,7 +2,6 @@ module FunWith
   module Files
     class FilePath < Pathname
       SUCC_DIGIT_COUNT = 6
-      DEFAULT_TIMESTAMP_FORMAT = "%Y%m%d%H%M%S%L"
 
       def initialize( *args, &block )
         super( File.join( *(args.map(&:to_s) ) ) )
@@ -230,7 +229,7 @@ module FunWith
           end
 
         self.touch_dir( dir_for_touched_file, opts ) unless dir_for_touched_file.directory?
-        FileUtils.touch( touched, ** Utils::Opts.narrow_options( opts, FileUtils::OPT_TABLE["touch"] ) )
+        FileUtils.touch( touched, ** Utils::Opts.narrow_file_utils_options( opts, :touch ) )
 
         yield touched if block_given?
         return touched
@@ -243,9 +242,9 @@ module FunWith
 
         touched = self.join(*args)
         if touched.directory?
-          FileUtils.touch( touched, ** Utils::Opts.narrow_options( opts, FileUtils::OPT_TABLE["touch"] ) )    # update access time
+          FileUtils.touch( touched, ** Utils::Opts.narrow_file_utils_options( opts, :touch ) )    # update access time
         else
-          FileUtils.mkdir_p( touched, ** Utils::Opts.narrow_options( opts, FileUtils::OPT_TABLE["mkdir_p"] ) )  # create directory (and any needed parents)
+          FileUtils.mkdir_p( touched, ** Utils::Opts.narrow_file_utils_options( opts, :mkdir_p ) )  # create directory (and any needed parents)
         end
 
         yield touched if block_given?
@@ -484,70 +483,42 @@ module FunWith
         yield self if block_given?
         self
       end
-
-      # Gives a sequence of files.  Examples:
-      # file.dat --> file.000000.dat
-      # file_without_ext --> file_without_ext.000000
-      # If it sees a six-digit number at the end of the
-      # filename (or immediately preceding the file extension), it increments it
+      
+      # Making this stricter, and failing when the formatting doesn't meet expectations, rather than 
+      # guessing wildly about what to do on corner cases.
+      # 
+      # This file is part of a sequence of files (file.000001.txt, file.000002.txt, file.000003.txt, etc.)
+      # `succ()` gives you the next file in the sequence.  If no counter is present, a counter is 
+      # added (file.dat --> file.000000.dat)
       #
-      # You can change the length of the sequence string by passing
-      # in an argument, but it should always be the same value for
-      # a given collection of files.
-      #
-      # TODO: Need to get this relying on the specifier() method.
-      def succ( opts = {} )
-        digit_count = opts.fetch(:digit_count){ SUCC_DIGIT_COUNT }
-        timestamp   = opts.fetch(:timestamp){ false }
-        time        = opts.fetch(:time){ Time.now }
+      # You can change the length of the sequence string by passing in the `digit_count` argument.
+      # Changing the length for a given sequence will lead to the function not recognizing the existing
+      # counter, and installing a new one after it.
+      def succ( digit_count: SUCC_DIGIT_COUNT )
+        directory_pieces = self.split
+        succession_basename = Utils::Succession.get_successor_name( directory_pieces.pop, digit_count )
         
-        if timestamp = opts[:timestamp]
-          timestamp_format = timestamp.is_a?(String) ? timestamp : DEFAULT_TIMESTAMP_FORMAT
-          timestamp = time.strftime( timestamp_format )
-          digit_count = timestamp.length
-        else
-          timestamp = false
-          digit_count = opts[:digit_count]
-        end
-        
-        # 
-        chunks = self.basename.to_s.split(".")
-        # not yet sequence stamped, no file extension.
-        if chunks.length == 1
-          if timestamp
-            chunks.push( timestamp )
-          else
-            chunks.push( "0" * digit_count )
-          end
-        # sequence stamp before file extension
-        elsif match_data = chunks[-2].match( /^(\d{#{digit_count}})$/ )
-          if timestamp
-            chunks[-2] = timestamp
-          else
-            i = match_data[1].to_i + 1
-            chunks[-2] = sprintf("%0#{digit_count}i", i)
-          end
-        # try to match sequence stamp to end of filename
-        elsif match_data = chunks[-1].match( /^(\d{#{digit_count}})$/ )
-          if timestamp
-            chunks[-1] = timestamp
-          else
-            i = match_data[1].to_i + 1
-            chunks[-1] = sprintf("%0#{digit_count}i", i)
-          end
-        # not yet sequence_stamped, has file extension
-        else
-          chunks = [chunks[0..-2], (timestamp ? timestamp : "0" * digit_count), chunks[-1]].flatten
-        end
-        
-        self.up.join( chunks.join(".") )
+        return FilePath.new( * directory_pieces ) / succession_basename
       end
       
       
-      def timestamp( format = true, &block )
-        nxt = self.succ( :timestamp => format )
+      def timestamp( format: :default, time: Time.now, splitter: ".", &block )
+        timestamped_basename = Utils::Timestamp.timestamp( self.basename, format: format, time: time, splitter: splitter )
         
-        _yield_and_return( nxt, &block )
+        directory_path = self.split[0..-2]
+        
+        # sigh....
+        if directory_path.first.path == "." && self.path[0..1] != ".#{File::SEPARATOR}"
+          directory_path.shift
+        end
+        
+        if directory_path.length == 0
+          timestamped_file = timestamped_basename.fwf_filepath
+        else
+          timestamped_file = FilePath.new( * self.split[0..-2], timestamped_basename ) 
+        end
+        
+        _yield_and_return( timestamped_file, &block )
       end
       
       # puts a string between the main part of the basename and the extension

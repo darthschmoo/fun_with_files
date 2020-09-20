@@ -1,9 +1,9 @@
 module FunWith
   module Files
-    module Error
-      # Useful... why, exactly?
-      class FunWithFilesError < StandardError
-      end
-    end
+    # Useful... why, exactly?
+    class Error < StandardError; end
+    
+    class SuccessionFormattingError < Error; end
+    class TimestampFormatUnrecognized < Error; end
   end
 end

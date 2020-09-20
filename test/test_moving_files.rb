@@ -1,10 +1,14 @@
 require 'helper'
 
-class TestMoving < FunWith::Files::TestCase
+class TestMovingFiles < FunWith::Files::TestCase
   context "inside a tmpdir" do
     setup do
       @src_dir = FilePath.tmpdir
       @dst_dir = FilePath.tmpdir
+      
+      assert_directory @src_dir
+      assert_directory @dst_dir
+      
       assert_empty_directory @src_dir
       assert_empty_directory @dst_dir
     end
@@ -18,7 +22,7 @@ class TestMoving < FunWith::Files::TestCase
     
     context "with a source file" do
       setup do
-        @src_file = @src_dir.join( "file.txt" )
+        @src_file = @src_dir / "file.txt"
         @src_file.write( "Hello world" )
         
         assert_file_not_empty( @src_file )
@@ -26,13 +30,26 @@ class TestMoving < FunWith::Files::TestCase
       
       
       should "successfully move a file into a directory" do
-        dest = @dst_dir.join( "file.txt" )
+        dest = @dst_dir / "file.txt"
+        
+        assert_no_file dest
+        
         @src_file.move @dst_dir
         
-        assert_file( dest )
+        assert_file dest 
       end
       
       
+      
+      # Seems dangerous to not have a concrete idea of what should happen when a move
+      # remove / create request takes place.  Ideas:
+      # be able to mark a destination as a directory, so that it knows the file move 
+      # is saying to
+      #
+      #  a directory should be created
+      #  a directory must exist for the move to occur
+      #  nothing exists at the destination, so the file is given the name of <thing_what_didnt_exist>
+      #  
       should "fail to move a file to a non-existent directory" do
         flunk "this actually moves the file (the file getting the name of the 'missing' directory, and I'm not sure that's wrong)"
         not_a_dir = @dst_dir / "humblebrag"
@@ -87,8 +104,8 @@ class TestMoving < FunWith::Files::TestCase
   # end
   
   def temporarily_write_protect( f, &block )
-    f.chmod( "a-x" )
+    f.chmod( "a-w" )
     yield
-    f.chmod( "a+x")
+    f.chmod( "a+w" )
   end
 end

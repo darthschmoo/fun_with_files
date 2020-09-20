@@ -1,6 +1,11 @@
 CHANGELOG
 =========
 
+v0.0.18
+-------
+
+* restricted the use of the file.succ() method, and removed timestamp functionality from it.  Now it only works if the initial file has an extension (no trailing counter, like file.000001 ).  Still fills in
+
 v0.0.17
 -------
 

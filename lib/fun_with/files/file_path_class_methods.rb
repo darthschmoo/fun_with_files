@@ -15,15 +15,32 @@ module FunWith
       end
       
       def config_dir( *args )
-        XDG['CONFIG'].fwf_filepath.join( *args )
+        xdg_get('CONFIG').fwf_filepath.join( *args )
       end
       
       def data_dir( *args )
-        XDG['DATA'].fwf_filepath.join( *args )
+        xdg_get('DATA').fwf_filepath.join( *args )
       end
       
       def cache_dir( *args )
-        XDG['CACHE_HOME'].fwf_filepath.join( *args )
+        xdg_get('CACHE_HOME').fwf_filepath.join( *args )
+      end
+      
+      def xdg_get( str )
+        if XDG.respond_to?( :"[]" )
+          XDG[str]
+        else
+          case str
+          when "CONFIG"
+            XDG::Environment.new.config_home
+          when "DATA"
+            XDG::Environment.new.data_home
+          when "CACHE_HOME"
+            XDG::Environment.new.cache_home
+          else
+            raise "Not sure what to do with XDG:#{str}"
+          end
+        end
       end
       
       # Honestly this is a token attempt at Windows compatibility.
