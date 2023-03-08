@@ -10,5 +10,5 @@ group :development do
   gem "fun_with_testing", "~> 0.0", ">= 0.0.7"
 end
 
-gem "xdg", ">= 2"
+gem "xdg", "~> 3"
 

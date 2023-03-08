@@ -19,7 +19,6 @@ class TestRootPath < FunWith::Files::TestCase
       assert_empty_directory( FunWith::Files.root( :test, :tmp ) )
       assert_empty_directory( FunWith::Files.root / :test / :tmp )
       assert_empty_directory( FunWith::Files.root / "test" / "tmp" )
-      
     end
   end
   

@@ -3,8 +3,12 @@
 module FunWith
   module Files
     module StringBehavior
-      def =~( rval )
-        @path =~ rval
+      def =~( rhs )
+        @path =~ rhs
+      end
+      
+      def !~( rhs )
+        @path !~ rhs
       end
       
       def match( *args )

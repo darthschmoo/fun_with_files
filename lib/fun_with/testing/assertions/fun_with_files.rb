@@ -54,7 +54,7 @@ module FunWith
         def assert_empty_directory( file, msg = nil )
           assert_fwf_filepath( file )
           msg = message(msg){ "Empty directory should exist at <#{file}>." }
-          assert file.directory? && file.empty?
+          assert file.directory? && file.empty?, msg
         end
         
         

@@ -2,16 +2,16 @@ module FunWith
   module Files
     # view and change file permissions
     module FilePermissionMethods
-      def readable?
-        File.readable?( self )
+      def readable?( &block )
+        _yield_self_on_success( File.readable?( self ), &block )
       end
       
-      def writable?
-        File.writable?( self )
+      def writable?( &block )
+        _yield_self_on_success( File.writable?( self ), &block )
       end
       
-      def executable?
-        File.executable?( self )
+      def executable?( &block )
+        _yield_self_on_success( File.executable?( self ), &block )
       end
       
       # options:  :noop, :verbose

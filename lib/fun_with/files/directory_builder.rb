@@ -41,6 +41,9 @@ module FunWith
       
       # Copies the given source file into a file in the current_path.
       # If a dest_name is given, the new file will be given that name.
+      #
+      # TODO: Improve testing, explain behavior better, need a way to distinguish between 
+      # forceful and gentle copying
       def copy( src_filepath, dst_name = nil )
         dst_filepath = dst_name ? @current_path.join( dst_name ) : @current_path
         FileUtils.copy( src_filepath, dst_filepath )
@@ -96,6 +99,7 @@ module FunWith
         end
       end
       
+      # The actual method is installed by 'fun_with_templates'
       def template( *args )
         raise "DirectoryBuilder cannot use template() function.  require 'fun_with_templates' to enable."
       end

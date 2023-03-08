@@ -22,7 +22,7 @@ module FunWith
         
         # does the given chunk look like a timestamp using this format?
         # returns true or false.  
-        def matches?( str )
+        def matches?( str, &block )
           @recognizer.match( str ) != nil
         end
       end

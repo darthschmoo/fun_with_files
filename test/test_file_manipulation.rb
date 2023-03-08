@@ -21,9 +21,9 @@ class TestFileManipulation < FunWith::Files::TestCase
     should "gsub copy of license.txt" do
       copied = @license.cp( "test", "tmp" )
       copied.file_gsub!( /Bryce Anderson/, "Wilford Brimley" )
-      assert copied.size > 1000
+      assert copied.size > 1000, "File is too small"
       
-      assert_file_contents copied, /Wilford Brimley/
+      assert_file_contents copied, /Wilford Brimley/, "Error 441: Wilford Brimley not found"
     end
     
     should "empty files and directories" do

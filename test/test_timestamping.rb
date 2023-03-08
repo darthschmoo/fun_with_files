@@ -34,6 +34,7 @@ class TestTimestamping < FunWith::Files::TestCase
 
     should "timestamp files using the timestamp() method" do
       timestampable_file = @tmp_dir / "timestamped.dat"
+      
       timestamped_file1  = timestampable_file.timestamp
       timestamped_file2  = timestampable_file.timestamp( format: :y )
 

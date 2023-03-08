@@ -57,12 +57,12 @@ module FunWith
       end
       
       
-      def doesnt_exist?
-        self.exist? == false
+      def doesnt_exist?( &block )
+        _yield_self_on_success( self.exist? == false, &block )
       end
       
-      def not_a_file?
-        ! self.file?
+      def not_a_file?( &block )
+        _yield_self_on_success( ! self.file?, &block )
       end
 
       alias :absent? :doesnt_exist?
@@ -312,14 +312,16 @@ module FunWith
       # empty? has different meanings depending on whether you're talking about a file
       # or a directory.  A directory must not have any files or subdirectories.  A file
       # must not have any data in it.
-      def empty?
+      def empty?( &block )
         raise Exceptions::FileDoesNotExist unless self.exist?
-
+        
         if self.file?
-          File.size( self ) == 0
+          is_empty = File.size( self ) == 0
         elsif self.directory?
-          self.glob( :all ).fwf_blank?
+          is_empty = Dir.entries( self ).length <= 2   # Dir.entries returns ".." and "." even when nothing else is there
         end
+        
+        _yield_self_on_success( is_empty, &block )
       end
 
       # Does not return a filepath
@@ -419,10 +421,13 @@ module FunWith
         # self.class.new( new_path )
       end
 
-      # Two separate modes.  With no arguments given, returns the current extension as a string (not a filepath)
-      # With an argument, returns the path with a .(arg) tacked onto the end.  The leading period is wholly optional.
-      # Does not return a filepath.
-      # Does not include leading period
+      # Two separate modes.  
+      #
+      # With no arguments given, returns the current extension as a string (not a filepath). No leading period.
+      # 
+      # With an argument, returns the path with a .(arg) tacked onto the end.  Result is the same whether a leading
+      # period is given or not.  Multiple extensions can be given, and any object can be used so long as it responds
+      # sensibly to .to_s() (use at your own risk).  Integers work, for example.  
       def ext( *args )
         if args.length == 0
           split_basename = self.basename.to_s.split(".")
@@ -439,8 +444,19 @@ module FunWith
         end
       end
       
-      def ext?( e )
-        e.to_str == self.ext
+      # asks if the .XXX at the end of the path matches one of the extensions given
+      # as an argument.  If a block is given, the block will be run if the extension
+      # matches, ignored if no match is detected.
+      def ext?( *extensions, &block )
+        # Why is .to_str used here instead of to_s?
+        acceptable_extensions = extensions.map do |e|
+          ext = e.is_a?( Pathname ) ? e.to_str : e.to_s
+          ext.gsub(/^\./,'')
+        end
+        
+        ext_matches = acceptable_extensions.include?( self.ext )  
+        
+        _yield_self_on_success( ext_matches, &block )
       end
 
       # base, ext =  @path.basename_and_ext
@@ -465,8 +481,8 @@ module FunWith
         self.directory? ? self : self.dirname
       end
 
-      def original?
-        !self.symlink?
+      def original?(&block)
+        _yield_self_on_success( !self.symlink?, &block )
       end
 
       def original
@@ -607,8 +623,8 @@ module FunWith
         FunWith::Files::Requirements::Manager.require_files( self )
       end
       
-      def root?
-        self == self.up
+      def root?(&block)
+        _yield_self_on_success( self == self.up, &block)
       end
 
       def descend( &block )
@@ -678,6 +694,21 @@ module FunWith
       def _yield_and_return( obj = self, &block )
         yield obj if block_given?
         obj
+      end
+      
+      # There are a bunch of methods that interrogate the path, and I want them all to respond to the
+      # same block form.  @file.exists?, run the block.  @file.writable?, run the block.  In all cases,
+      # the path is yielded as an argument
+      def _yield_self_on_success( success, &block )
+        if block_given?
+          if success
+            yield self
+          else
+            false
+          end
+        else
+          success
+        end
       end
     end
   end

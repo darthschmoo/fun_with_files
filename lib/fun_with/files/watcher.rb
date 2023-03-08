@@ -38,17 +38,16 @@
 # But the top-level one should know that it's the top level, so it
 # shouldn't be deleting its watchers that might be, for example, 
 # waiting for a file to come into being. 
-
-# Bug:  Swap out a file for a folder, it detects that a modification has happened, but not vice versa
-#       Presumably, because DirectoryWatcher doesn't care about modification times
 #
-# Bug:  When you delete a nested folder, it reports the deletion of the top folder, and of files
-#       but not of subfolders
+# Hence, anyone using this code probably ought to stick to using the main Watcher
+# class, and not worry about the ones it uses in the background
+#
+# Filters can be added
 module FunWith
   module Files
     class Watcher
-      def self.watch( *paths, interval: 1.0, &block )
-        watcher = self.new( paths ).sleep_interval( interval )
+      def self.watch( *paths, interval: 1.0, notice: [], ignore: [], &block )
+        watcher = self.new( paths ).sleep_interval( interval ).filter( notice: notice, ignore: ignore )
         
         if block_given?
           watcher.watch( &block )
@@ -73,6 +72,8 @@ module FunWith
       
       def initialize( paths )
         @sleep_interval = 1.0
+        @notice_filters = []
+        @ignore_filters = []
         
         # Create a watcher for every single thing that we're
         # asking it to watch
@@ -94,6 +95,13 @@ module FunWith
         end
       end
       
+      def filter( notice: [], ignore: [] )
+        @notice_filters += [notice].flatten
+        @ignore_filters += [ignore].flatten
+        
+        self
+      end
+      
       # returns a hash of the changes that have happened in the file system being monitored,
       def update
         {}.tap do |changes|
@@ -107,6 +115,8 @@ module FunWith
               changes.merge!( path.glob(:all).inject({}){ |memo,path| memo[path] = :created ; memo } )
             end
           end
+          
+          apply_filters( changes )
         end
       end
       
@@ -116,6 +126,29 @@ module FunWith
           # didn't change
         when :deleted, :created
           @watchers[path] = self.class.factory( path )
+        end
+      end
+      
+      # 
+      def apply_filters( changes )
+        apply_notice_filters( changes )
+        apply_ignore_filters( changes )
+        changes
+      end
+      
+      def apply_notice_filters( changes )
+        for filter in @notice_filters
+          for path in changes.keys
+            changes.delete( path ) if path !~ filter
+          end
+        end
+      end
+      
+      def apply_ignore_filters( changes )
+        for filter in @ignore_filters
+          for path in changes.keys
+            changes.delete( path ) if path =~ filter
+          end
         end
       end
     end
