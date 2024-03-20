@@ -96,7 +96,7 @@ module FunWith
       
       
       def file_gsub( *args, &block )
-        _must_be_a_file
+        must_be_file
         
         lines = []
         self.each_line do |line|
@@ -107,8 +107,8 @@ module FunWith
       end
       
       def file_gsub!( *args, &block )
-        _must_be_a_file      # raises error
-        _must_be_writable    # raises error
+        must_be_file      # raises error
+        must_be_writable    # raises error
         
         self.write( self.file_gsub( *args, &block ) )
       end
@@ -124,8 +124,8 @@ module FunWith
       # TODO: If it's truncated to a longer length than the original file,
       # pad with zeros?  That's how the UNIX truncate command works.
       def truncate( len = 0 )
-        _must_be_a_file     # raises error
-        _must_be_writable   # raises error
+        must_be_file     # raises error
+        must_be_writable   # raises error
         
         old_size = self.size
         padding = len > old_size ? "\0" * (len - old_size) : ""

@@ -6,6 +6,8 @@ module FunWith
       class SuccessionFormattingError < Error; end
       class TimestampFormatUnrecognized < Error; end
       class FileNotEmpty < Error; end
+      class NotADirectory < Error; end
+      class NotAFile < Error; end
     end
   end
 end

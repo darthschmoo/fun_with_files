@@ -669,21 +669,21 @@ module FunWith
 
       protected
       # TODO: Need a separate API for user to call
-      def _must_be_a_file
+      def must_be_file
         unless self.file?
           calling_method = caller[0][/`.*'/][1..-2]
           raise Errno::EACCES.new( "Can only call FunWith::Files::FilePath##{calling_method}() on an existing file.")
         end
       end
 
-      def _must_be_a_directory
+      def must_be_directory
         unless self.directory?
           calling_method = caller[0][/`.*'/][1..-2]
           raise Errno::EACCES.new( "Can only call FunWith::Files::FilePath##{calling_method}() on an existing directory." )
         end
       end
 
-      def _must_be_writable
+      def must_be_writable
         unless self.writable?
           calling_method = caller[0][/`.*'/][1..-2]
           raise Errno::EACCES.new( "Error in FunWith::Files::FilePath##{calling_method}(): #{@path} not writable." )

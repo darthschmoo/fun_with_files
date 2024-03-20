@@ -27,7 +27,9 @@ class TestFileRequirements < FunWith::Files::TestCase
       end
       
       should "raise an error when a file oughta be a directory" do
-        flunk
+        assert_raises Errors::NotADirectory do
+          @file.must_be_directory
+        end
       end
     end
   end

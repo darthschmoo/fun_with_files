@@ -45,12 +45,14 @@ class TestTimestamping < FunWith::Files::TestCase
     should "raise an error when invalid format requested" do
       f = @tmp_dir / "apache.log"
       
-      assert_raises TimestampFormatUnrecognized do
+      stamped = f.timestamp
+      
+      assert_raises Errors::TimestampFormatUnrecognized do
         f.timestamp( format: :zztop )
       end
       
       # Symbols only!
-      assert_raises TimestampFormatUnrecognized do
+      assert_raises Errors::TimestampFormatUnrecognized do
         f.timestamp( format: "ymd" )
       end
     end

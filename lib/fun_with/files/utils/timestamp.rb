@@ -18,7 +18,7 @@ module FunWith
           if @formats.has_key?(key)
             @formats[key]
           else
-            raise TimestampFormatUnrecognized.new( "Unrecognized timestamp format (#{key.inspect}).  Choose from #{@formats.keys.inspect}" )
+            raise Errors::TimestampFormatUnrecognized.new( "Unrecognized timestamp format (#{key.inspect}).  Choose from #{@formats.keys.inspect}" )
           end
         end
         
